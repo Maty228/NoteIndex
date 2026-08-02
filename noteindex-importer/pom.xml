@@ -17,4 +17,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>cz.martim12</groupId>
+            <artifactId>noteindex-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+
+    </dependencies>
+
 </project>
