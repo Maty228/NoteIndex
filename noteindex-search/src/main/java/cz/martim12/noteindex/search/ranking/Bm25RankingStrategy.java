@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Collections;
 
 /**
  * Field-aware BM25 ranking strategy.
@@ -153,6 +154,6 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         });
 
 
-        return Map.copyOf(copy);
+        return Collections.unmodifiableMap(copy);
     }
 }

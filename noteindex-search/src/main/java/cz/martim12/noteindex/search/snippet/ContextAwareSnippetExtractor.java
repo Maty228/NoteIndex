@@ -128,14 +128,21 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
 
         int anchorLength = anchor.endOffset() - anchor.startOffset();
 
-        int availableContext = Math.max(0, maximumLength - anchorLength);
+        /*
+         * maximumLength is preferred rather than absolute. An exact
+         * phrase should not be cut in half merely because the phrase
+         * itself is longer than the requested snippet length.
+         */
+        int targetLength = Math.max(anchorLength, maximumLength);
+
+        int availableContext = targetLength - anchorLength;
 
         int start = Math.max(0, anchor.startOffset() - availableContext / 2);
 
-        int end = Math.min(text.length(), start + maximumLength);
+        int end = Math.min(text.length(), start + targetLength);
 
-        if (end - start < maximumLength) {
-            start = Math.max(0, end - maximumLength);
+        if (end - start < targetLength) {
+            start = Math.max(0, end - targetLength);
         }
 
         start = alignStartToWordBoundary(text, start, end);

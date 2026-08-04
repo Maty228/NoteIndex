@@ -155,4 +155,27 @@ class ContextAwareSnippetExtractorTest {
                 )
         );
     }
+
+    @Test
+    void keepsExactPhraseIntactWhenItExceedsPreferredLength() {
+        String text =
+                "Prefix before an exceptionally long exact phrase "
+                        + "and trailing content.";
+
+        ParsedQuery query =
+                parser.parse(
+                        "\"exceptionally long exact phrase\""
+                );
+
+        Snippet snippet =
+                extractor.extract(text, query, 12);
+
+        assertTrue(
+                snippet.text().contains(
+                        "exceptionally long exact phrase"
+                )
+        );
+
+        assertTrue(snippet.text().length() > 12);
+    }
 }
