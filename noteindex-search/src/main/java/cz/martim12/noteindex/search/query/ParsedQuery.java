@@ -39,7 +39,7 @@ public record ParsedQuery (
      * Returns every distinct normalized term used by the query.
      */
     public List<String> allTerms() {
-        Set<String> allTerms = new LinkedHashSet<>();
+        Set<String> allTerms = new LinkedHashSet<>(terms);
 
         for (QueryPhrase phrase : requiredPhrases) {
             allTerms.addAll(phrase.terms());
