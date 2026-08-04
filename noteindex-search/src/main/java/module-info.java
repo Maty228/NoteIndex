@@ -5,4 +5,5 @@ module noteindex.search {
     exports cz.martim12.noteindex.search.retrieval;
     exports cz.martim12.noteindex.search.ranking;
     exports cz.martim12.noteindex.search.engine;
+    exports cz.martim12.noteindex.search.snippet;
 }
