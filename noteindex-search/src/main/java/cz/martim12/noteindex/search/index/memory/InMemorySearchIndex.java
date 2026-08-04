@@ -9,6 +9,11 @@ import cz.martim12.noteindex.search.index.IndexDocument;
 import cz.martim12.noteindex.search.index.Posting;
 import cz.martim12.noteindex.search.index.SearchIndex;
 
+import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import java.util.*;
 
 /**
@@ -20,6 +25,9 @@ import java.util.*;
 public final class InMemorySearchIndex implements SearchIndex{
 
     private final TextAnalyzer analyzer;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock readLock = lock.readLock();
+    private final Lock writeLock = lock.writeLock();
 
     /*
      * Field
@@ -47,12 +55,18 @@ public final class InMemorySearchIndex implements SearchIndex{
     public void indexDocument(IndexDocument document) {
         Objects.requireNonNull(document, "Index document must not be null");
 
-        PreparedDocument preparedDocument = prepare(document);
+        writeLock.lock();
 
-        if (statisticsByDocument.containsKey(document.documentId())) {
-            removeDocument(document.documentId());
+        try {
+            PreparedDocument preparedDocument = prepare(document);
+
+            if (statisticsByDocument.containsKey(document.documentId())) {
+                removeDocument(document.documentId());
+            }
+            addPreparedDocument(preparedDocument);
+        } finally {
+            writeLock.unlock();
         }
-        addPreparedDocument(preparedDocument);
     }
 
     @Override
@@ -60,87 +74,124 @@ public final class InMemorySearchIndex implements SearchIndex{
         requireTerm(normalizedTerm);
         Objects.requireNonNull(field, "Field name must not be null");
 
-        Map<String, NavigableMap<Long, Posting>> fieldPostings = postingsByField.get(field);
+        readLock.lock();
 
-        if (fieldPostings == null) {
-            return List.of();
+        try {
+            Map<String, NavigableMap<Long, Posting>> fieldPostings = postingsByField.get(field);
+
+            if (fieldPostings == null) {
+                return List.of();
+            }
+
+            NavigableMap<Long, Posting> termPostings = fieldPostings.get(normalizedTerm);
+
+            if (termPostings == null) {
+                return List.of();
+            }
+            return List.copyOf(termPostings.values());
+        } finally {
+            readLock.unlock();
         }
-
-        NavigableMap<Long, Posting> termPostings = fieldPostings.get(normalizedTerm);
-
-        if (termPostings == null) {
-            return List.of();
-        }
-        return List.copyOf(termPostings.values());
     }
 
     @Override
     public Optional<DocumentStatistics> documentStatistics(long documentId) {
         requirePositiveDocumentId(documentId);
 
-        return Optional.ofNullable(statisticsByDocument.get(documentId));
+        readLock.lock();
+
+        try {
+            return Optional.ofNullable(statisticsByDocument.get(documentId));
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
     public FieldStatistics fieldStatistics(FieldName field) {
         Objects.requireNonNull(field, "Field name must not be null");
 
-        MutableFieldStatistics statistics = statisticsByField.get(field);
+        readLock.lock();
 
-        if (statistics == null) {
-            return new FieldStatistics(0, 0);
+        try {
+            MutableFieldStatistics statistics = statisticsByField.get(field);
+
+            if (statistics == null) {
+                return new FieldStatistics(0, 0);
+            }
+
+            return statistics.snapshot();
+        } finally {
+            readLock.unlock();
         }
-
-        return statistics.snapshot();
     }
 
     @Override
     public long documentCount() {
-        return statisticsByDocument.size();
+        readLock.lock();
+
+        try {
+            return statisticsByDocument.size();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
     public boolean removeDocument(long documentId) {
         requirePositiveDocumentId(documentId);
 
-        DocumentStatistics documentStatistics = statisticsByDocument.remove(documentId);
+        writeLock.lock();
 
-        if (documentStatistics == null) {
-            return false;
-        }
+        try {
+            DocumentStatistics documentStatistics = statisticsByDocument.remove(documentId);
 
-        Map<FieldName, Set<String>> documentTerms = termsByDocument.remove(documentId);
+            if (documentStatistics == null) {
+                return false;
+            }
 
-        for(Map.Entry<FieldName, Integer> fieldEntry : documentStatistics.fieldLengths().entrySet()) {
+            Map<FieldName, Set<String>> documentTerms = termsByDocument.remove(documentId);
 
-            FieldName field = fieldEntry.getKey();
-            int fieldLength = fieldEntry.getValue();
+            if (documentTerms == null) {
+                throw new IllegalStateException(
+                        "Missing term metadata for indexed document " + documentId
+                 );
+            }
+            for (Map.Entry<FieldName, Integer> fieldEntry : documentStatistics.fieldLengths().entrySet()) {
 
-            removeDocumentPostings(documentId, field,
-                    documentTerms == null ?
-                    Set.of() :
-                    documentTerms.getOrDefault(field, Set.of())
-            );
+                FieldName field = fieldEntry.getKey();
+                int fieldLength = fieldEntry.getValue();
 
-            MutableFieldStatistics fieldStatistics = statisticsByField.get(field);
+                removeDocumentPostings(documentId, field, documentTerms.getOrDefault(field, Set.of()));
 
-            if (fieldStatistics != null) {
-                fieldStatistics.removeDocument(fieldLength);
+                MutableFieldStatistics fieldStatistics = statisticsByField.get(field);
 
-                if (fieldStatistics.isEmpty()) {
-                    statisticsByField.remove(field);
+                if (fieldStatistics != null) {
+                    fieldStatistics.removeDocument(fieldLength);
+
+                    if (fieldStatistics.isEmpty()) {
+                        statisticsByField.remove(field);
+                    }
                 }
             }
+            return true;
+        } finally {
+            writeLock.unlock();
         }
-        return true;
     }
 
     @Override
     public void clear() {
-        postingsByField.clear();
-        statisticsByDocument.clear();
-        termsByDocument.clear();
-        statisticsByField.clear();
+        writeLock.lock();
+
+        try {
+            postingsByField.clear();
+            statisticsByDocument.clear();
+            termsByDocument.clear();
+            statisticsByField.clear();
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     private PreparedDocument prepare(IndexDocument document) {

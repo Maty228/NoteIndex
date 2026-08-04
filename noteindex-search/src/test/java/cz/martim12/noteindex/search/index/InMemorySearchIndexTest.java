@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
 class InMemorySearchIndexTest {
 
     private SearchIndex index;
@@ -194,6 +194,121 @@ class InMemorySearchIndexTest {
                         "python",
                         FieldName.BODY
                 ).isEmpty()
+        );
+    }
+
+    @Test
+    void replacesExistingDocument() {
+        index.indexDocument(new IndexDocument(
+                1,
+                Map.of(
+                        FieldName.TITLE,
+                        "Binary Trees",
+                        FieldName.BODY,
+                        "Trees are useful"
+                )
+        ));
+
+        index.indexDocument(new IndexDocument(
+                1,
+                Map.of(
+                        FieldName.TITLE,
+                        "Graph Algorithms",
+                        FieldName.BODY,
+                        "Graphs contain vertices and edges"
+                )
+        ));
+
+        assertEquals(1, index.documentCount());
+
+        assertTrue(
+                index.postings(
+                        "binary",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+
+        assertTrue(
+                index.postings(
+                        "trees",
+                        FieldName.BODY
+                ).isEmpty()
+        );
+
+        assertEquals(
+                List.of(new Posting(1, List.of(0))),
+                index.postings(
+                        "graphs",
+                        FieldName.BODY
+                )
+        );
+
+        DocumentStatistics statistics =
+                index.documentStatistics(1).orElseThrow();
+
+        assertEquals(2, statistics.fieldLength(FieldName.TITLE));
+        assertEquals(5, statistics.fieldLength(FieldName.BODY));
+    }
+
+    @Test
+    void removesDocumentAndUpdatesStatistics() {
+        index.indexDocument(new IndexDocument(
+                1,
+                Map.of(FieldName.BODY, "java java virtual machine")
+        ));
+
+        index.indexDocument(new IndexDocument(
+                2,
+                Map.of(FieldName.BODY, "java collections")
+        ));
+
+        assertTrue(index.removeDocument(1));
+
+        assertEquals(1, index.documentCount());
+        assertTrue(index.documentStatistics(1).isEmpty());
+
+        assertEquals(
+                List.of(new Posting(2, List.of(0))),
+                index.postings("java", FieldName.BODY)
+        );
+
+        FieldStatistics statistics =
+                index.fieldStatistics(FieldName.BODY);
+
+        assertEquals(1, statistics.documentsWithField());
+        assertEquals(2, statistics.totalTokenCount());
+    }
+
+    @Test
+    void returnsFalseWhenRemovingUnknownDocument() {
+        assertFalse(index.removeDocument(999));
+    }
+
+    @Test
+    void clearsAllIndexedData() {
+        index.indexDocument(new IndexDocument(
+                1,
+                Map.of(FieldName.BODY, "java virtual machine")
+        ));
+
+        index.indexDocument(new IndexDocument(
+                2,
+                Map.of(FieldName.BODY, "sqlite database")
+        ));
+
+        index.clear();
+
+        assertEquals(0, index.documentCount());
+        assertTrue(index.documentStatistics(1).isEmpty());
+        assertTrue(index.documentStatistics(2).isEmpty());
+
+        assertTrue(
+                index.postings("java", FieldName.BODY).isEmpty()
+        );
+
+        assertEquals(
+                new FieldStatistics(0, 0),
+                index.fieldStatistics(FieldName.BODY)
         );
     }
 }
