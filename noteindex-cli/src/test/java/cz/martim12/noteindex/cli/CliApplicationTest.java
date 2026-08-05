@@ -164,11 +164,11 @@ class CliApplicationTest {
     }
 
     @Test
-    void returnsUsageErrorForUnexpectedArguments() {
+    void returnsUsageErrorForInvalidHelpTopic() {
         CliApplication cli = new CliApplication();
 
         int exitCode = cli.run(
-                new String[]{"help", "extra"},
+                new String[]{"help", "unknown"},
                 output,
                 error
         );
@@ -180,7 +180,7 @@ class CliApplicationTest {
 
         assertTrue(
                 errorOutput().contains(
-                        "Expected one command"
+                        "Unknown help topic: unknown"
                 )
         );
     }
@@ -218,6 +218,43 @@ class CliApplicationTest {
 
         assertEquals(0, openingCount.get());
     }
+
+    @Test
+    void displaysCommandSpecificHelpWithoutOpeningService() {
+        AtomicInteger openingCount =
+                new AtomicInteger();
+
+        CliApplication cli = new CliApplication(
+                databaseFile -> {
+                    openingCount.incrementAndGet();
+
+                    throw new AssertionError(
+                            "Help must not open the service"
+                    );
+                },
+                "1.0-test"
+        );
+
+        int exitCode = cli.run(
+                new String[]{"help", "search"},
+                output,
+                error
+        );
+
+        assertEquals(
+                CliExitCode.SUCCESS,
+                exitCode
+        );
+
+        assertTrue(
+                standardOutput().contains(
+                        "noteindex search [--limit N] <query>"
+                )
+        );
+
+        assertEquals(0, openingCount.get());
+    }
+
 
     private String standardOutput() {
         return outputBytes.toString(

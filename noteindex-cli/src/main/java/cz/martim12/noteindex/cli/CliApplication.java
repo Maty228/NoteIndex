@@ -2,14 +2,25 @@ package cz.martim12.noteindex.cli;
 
 
 import cz.martim12.noteindex.application.api.NoteIndexApplications;
+import cz.martim12.noteindex.application.api.NoteIndexService;
+import cz.martim12.noteindex.cli.command.*;
+
+import cz.martim12.noteindex.cli.output.CliOutputFormatter;
+import cz.martim12.noteindex.cli.parsing.CliArguments;
+import cz.martim12.noteindex.cli.parsing.CliCommandParser;
+import cz.martim12.noteindex.cli.parsing.CliUsageException;
+import cz.martim12.noteindex.cli.runtime.CliDatabasePaths;
 import cz.martim12.noteindex.cli.runtime.NoteIndexServiceFactory;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
  * Testable command-line application.
- *
+
  * The main method delegates here so commands can be tested without
  * starting another JVM or replacing System.out and System.err.
  */
@@ -18,15 +29,25 @@ public final class CliApplication {
     public static final String VERSION = "1.0";
 
     private final NoteIndexServiceFactory serviceFactory;
+    private final CliCommandParser commandParser;
     private final String version;
 
     public CliApplication() {
-        this(NoteIndexApplications::open, VERSION);
+        this(NoteIndexApplications::open, VERSION, new CliCommandParser(CliDatabasePaths.defaultDatabaseFile()));
     }
 
     public CliApplication(NoteIndexServiceFactory serviceFactory, String version) {
+        this(serviceFactory, version, new CliCommandParser(CliDatabasePaths.defaultDatabaseFile()));
+    }
+
+    /*
+     * Package-private constructor for deterministic tests with a
+     * temporary default database path.
+     */
+    public CliApplication(NoteIndexServiceFactory serviceFactory, String version, CliCommandParser commandParser) {
         this.serviceFactory = Objects.requireNonNull(serviceFactory, "Service factory must not be null");
         this.version = requireNonBlank(version, "CLI version");
+        this.commandParser = Objects.requireNonNull(commandParser, "Command parser must not be null");
     }
 
     /**
@@ -39,60 +60,117 @@ public final class CliApplication {
         Objects.requireNonNull(standardOutput, "Standard output must not be null");
         Objects.requireNonNull(errorOutput, "Error output must not be null");
 
-        if (args.length == 0) {
-            printHelp(standardOutput);
-            return CliExitCode.SUCCESS;
-        }
+        final CliArguments parsedArgs;
 
-        if (args.length != 1) {
-            printUsageError(errorOutput, "Expected one command");
+        try {
+            parsedArgs = commandParser.parse(args);
+        } catch (CliUsageException exception) {
+            CliOutputFormatter.printUsageError(errorOutput, exception.getMessage());
 
             return CliExitCode.USAGE_ERROR;
         }
 
-        return switch (args[0]) {
-            case "help", "--help", "-h" -> {
-                printHelp(standardOutput);
+        return execute(parsedArgs, standardOutput, errorOutput);
+    }
+
+    private int execute(CliArguments args, PrintStream standardOutput, PrintStream errorOutput) {
+        return switch (args.command()) {
+            case HelpCommand helpCommand -> {
+                printHelp(standardOutput, helpCommand);
                 yield CliExitCode.SUCCESS;
             }
 
-            case "version", "--version", "-v" -> {
-                printVersion(standardOutput);
+            case VersionCommand _ -> {
+                CliOutputFormatter.printVersion(standardOutput, version);
                 yield CliExitCode.SUCCESS;
             }
 
-            default -> {
-                printUsageError(errorOutput, "Unknown command: " + args[0]);
-                yield CliExitCode.USAGE_ERROR;
-            }
+            case FormatsCommand formatsCommand -> executeServiceCommand(args.databaseFile(), formatsCommand, standardOutput, errorOutput);
+
+            case ListCommand listCommand -> executeServiceCommand(args.databaseFile(), listCommand, standardOutput, errorOutput);
+
+            case ShowCommand showCommand -> executeServiceCommand(args.databaseFile(), showCommand, standardOutput, errorOutput);
+
+            case ImportCommand _ -> printNotImplemented(errorOutput, "import");
+
+            case SearchCommand _ -> printNotImplemented(errorOutput, "search");
+
+            case DeleteCommand _ -> printNotImplemented(errorOutput, "delete");
         };
     }
 
-    private void printHelp(PrintStream output) {
-        output.println("""
-                NoteIndex command-line interface
-                
-                Usage:
-                  noteindex <command>
-                  
-                Commands:
-                  help        Show this help message
-                  version     Show the NoteIndex version
-                  
-                Options:
-                  -h, --help     Show this help message
-                  -v, --version  Show the NoteIndex version 
-                """.stripTrailing());
+    private int executeServiceCommand(Path databaseFile, CliCommand command, PrintStream standardOutput, PrintStream errorOutput) {
+        try {
+            createDatabaseParentDirectory(databaseFile);
+
+            try (NoteIndexService service = Objects.requireNonNull(serviceFactory.open(databaseFile), "Service factory returned null")) {
+                return executeWithService(service, command, standardOutput, errorOutput);
+            }
+        } catch (IOException | RuntimeException exception) {
+            CliOutputFormatter.printOperationError(errorOutput, operationFailureMessage(exception));
+
+            return CliExitCode.FAILURE;
+        }
     }
 
-    private void printVersion(PrintStream output) {
-        output.println("NoteIndex " + version);
+    private int executeWithService(NoteIndexService service, CliCommand command, PrintStream standardOutput, PrintStream errorOutput) {
+        return switch (command) {
+            case FormatsCommand _ -> {
+                CliOutputFormatter.printFormats(standardOutput, service.supportedImportExtensions());
+                yield CliExitCode.SUCCESS;
+            }
+
+            case ListCommand _ -> {
+                CliOutputFormatter.printDocumentList(standardOutput, service.listDocuments());
+                yield CliExitCode.SUCCESS;
+            }
+
+            case ShowCommand showCommand ->
+                service.findDocument(showCommand.documentId())
+                        .map(document -> {
+                            CliOutputFormatter.printDocument(standardOutput, document);
+                            return CliExitCode.SUCCESS;
+                        })
+                        .orElseGet(() -> {
+                            CliOutputFormatter.printOperationError(errorOutput, "Document " + showCommand.documentId() + " does not exist.");
+                            return CliExitCode.FAILURE;
+                        });
+
+
+            default -> throw new IllegalStateException("Command does not use the application service: " + command.getClass().getSimpleName());
+        };
     }
 
-    private void printUsageError(PrintStream output, String message) {
-        output.println("Error: " + message);
-        output.println("Run 'noteindex help' for usage.");
+    private void printHelp(PrintStream output, HelpCommand command) {
+        command.topic().ifPresentOrElse(
+                topic -> CliOutputFormatter.printCommandHelp(output, topic),
+                () -> CliOutputFormatter.printGeneralHelp(output)
+        );
     }
+
+    private int printNotImplemented(PrintStream errorOutput, String command) {
+        CliOutputFormatter.printUsageError(errorOutput, "Command is not implemented yet: " + command);
+        return CliExitCode.USAGE_ERROR;
+    }
+
+    private static void createDatabaseParentDirectory(Path databaseFile) throws IOException {
+        Path parent = databaseFile.getParent();
+
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+    }
+
+    private static String operationFailureMessage(Throwable exception) {
+        String message = exception.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getSimpleName();
+        }
+
+        return message;
+    }
+
 
     private static String requireNonBlank(String value, String name) {
         if (value == null || value.isBlank()) {
