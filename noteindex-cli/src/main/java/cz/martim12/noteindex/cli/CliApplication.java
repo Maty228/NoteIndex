@@ -11,6 +11,8 @@ import cz.martim12.noteindex.cli.parsing.CliCommandParser;
 import cz.martim12.noteindex.cli.parsing.CliUsageException;
 import cz.martim12.noteindex.cli.runtime.CliDatabasePaths;
 import cz.martim12.noteindex.cli.runtime.NoteIndexServiceFactory;
+import cz.martim12.noteindex.core.model.Document;
+import cz.martim12.noteindex.core.model.SearchQuery;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -91,9 +93,9 @@ public final class CliApplication {
 
             case ShowCommand showCommand -> executeServiceCommand(args.databaseFile(), showCommand, standardOutput, errorOutput);
 
-            case ImportCommand _ -> printNotImplemented(errorOutput, "import");
+            case ImportCommand importCommand -> executeServiceCommand(args.databaseFile(), importCommand, standardOutput, errorOutput);
 
-            case SearchCommand _ -> printNotImplemented(errorOutput, "search");
+            case SearchCommand searchCommand -> executeServiceCommand(args.databaseFile(), searchCommand, standardOutput, errorOutput);
 
             case DeleteCommand _ -> printNotImplemented(errorOutput, "delete");
         };
@@ -135,6 +137,20 @@ public final class CliApplication {
                             CliOutputFormatter.printOperationError(errorOutput, "Document " + showCommand.documentId() + " does not exist.");
                             return CliExitCode.FAILURE;
                         });
+
+            case ImportCommand importCommand -> {
+                Document importedDocument = service.importFile(importCommand.source());
+
+                CliOutputFormatter.printImportedDocument(standardOutput, importedDocument);
+
+                yield CliExitCode.SUCCESS;
+            }
+
+            case SearchCommand searchCommand -> {
+                var results = service.search(new SearchQuery(searchCommand.query()), searchCommand.limit());
+                CliOutputFormatter.printSearchResults(standardOutput, results);
+                yield CliExitCode.SUCCESS;
+            }
 
 
             default -> throw new IllegalStateException("Command does not use the application service: " + command.getClass().getSimpleName());

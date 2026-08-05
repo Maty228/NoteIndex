@@ -2,9 +2,11 @@ package cz.martim12.noteindex.cli.output;
 
 import cz.martim12.noteindex.core.model.Document;
 import cz.martim12.noteindex.core.model.DocumentSummary;
+import cz.martim12.noteindex.core.model.SearchResult;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -118,6 +120,16 @@ public final class CliOutputFormatter {
                 .forEach(extension -> output.println("  " + extension));
     }
 
+    public static void printImportedDocument(PrintStream output, Document document) {
+        requireOutput(output);
+        Objects.requireNonNull(document, "Imported document must not be null");
+
+        output.println("Imported document " + document.id() + ": " + document.title());
+
+        output.println("Format: " + document.format());
+        output.println("Source: " + document.sourceUri());
+    }
+
     public static void printDocumentList(PrintStream output, List<DocumentSummary> documents) {
         requireOutput(output);
         Objects.requireNonNull(documents, "Documents must not be null");
@@ -151,6 +163,38 @@ public final class CliOutputFormatter {
         output.println("Imported:  " + document.importedAt());
         output.println();
         output.println(document.originalContent());
+    }
+
+    public static void printSearchResults(PrintStream output, List<SearchResult> results) {
+        requireOutput(output);
+        Objects.requireNonNull(results, "Search results must not be null");
+
+        if (results.isEmpty()) {
+            output.println("No matching documents.");
+            return;
+        }
+
+        output.println(results.size() + " result(s)");
+
+        for (int index = 0; index < results.size(); index++) {
+            SearchResult result = Objects.requireNonNull(results.get(index), "Search result must not be null");
+
+            output.println();
+
+            output.println((index + 1) + ". " + result.document().title());
+
+            output.printf(
+                    Locale.ROOT,
+                    "   ID: %d | Format: %s | Score: %.3f%n",
+                    result.document().id(),
+                    result.document().format(),
+                    result.score()
+            );
+
+            if (!result.snippet().isBlank()) {
+                output.println("   " + result.snippet());
+            }
+        }
     }
 
     public static void printUsageError(PrintStream output, String message) {
