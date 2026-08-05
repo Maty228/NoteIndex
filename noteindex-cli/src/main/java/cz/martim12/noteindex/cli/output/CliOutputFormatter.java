@@ -93,6 +93,13 @@ public final class CliOutputFormatter {
                     
                     Shows the NoteIndex version.
                     """;
+
+            case "delete" -> """
+                    Usage:
+                      noteindex delete <document-id>
+            
+                    Deletes one document.
+                    """;
             default -> throw new IllegalArgumentException("Unknown help command: " + command);
         };
 
@@ -196,6 +203,17 @@ public final class CliOutputFormatter {
             }
         }
     }
+
+    public static void printDeletedDocument(PrintStream output, long documentId) {
+        requireOutput(output);
+        output.println("Deleted document " + documentId +".");
+    }
+
+    public static void printMissingDocument(PrintStream errorOutput, long documentId) {
+        requireOutput(errorOutput);
+        printOperationError(errorOutput, "Document " + documentId + " does not exist.");
+    }
+
 
     public static void printUsageError(PrintStream output, String message) {
         requireOutput(output);

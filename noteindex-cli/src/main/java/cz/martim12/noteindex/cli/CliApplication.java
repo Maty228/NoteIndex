@@ -5,6 +5,7 @@ import cz.martim12.noteindex.application.api.NoteIndexApplications;
 import cz.martim12.noteindex.application.api.NoteIndexService;
 import cz.martim12.noteindex.cli.command.*;
 
+import cz.martim12.noteindex.cli.error.CliErrorHandler;
 import cz.martim12.noteindex.cli.output.CliOutputFormatter;
 import cz.martim12.noteindex.cli.parsing.CliArguments;
 import cz.martim12.noteindex.cli.parsing.CliCommandParser;
@@ -32,6 +33,7 @@ public final class CliApplication {
 
     private final NoteIndexServiceFactory serviceFactory;
     private final CliCommandParser commandParser;
+    private final CliErrorHandler errorHandler;
     private final String version;
 
     public CliApplication() {
@@ -42,14 +44,19 @@ public final class CliApplication {
         this(serviceFactory, version, new CliCommandParser(CliDatabasePaths.defaultDatabaseFile()));
     }
 
+    public CliApplication(NoteIndexServiceFactory serviceFactory, String version, CliCommandParser commandParser) {
+        this(serviceFactory, version, commandParser, new CliErrorHandler());
+    }
+
     /*
      * Package-private constructor for deterministic tests with a
      * temporary default database path.
      */
-    public CliApplication(NoteIndexServiceFactory serviceFactory, String version, CliCommandParser commandParser) {
+    public CliApplication(NoteIndexServiceFactory serviceFactory, String version, CliCommandParser commandParser, CliErrorHandler errorHandler) {
         this.serviceFactory = Objects.requireNonNull(serviceFactory, "Service factory must not be null");
         this.version = requireNonBlank(version, "CLI version");
         this.commandParser = Objects.requireNonNull(commandParser, "Command parser must not be null");
+        this.errorHandler = Objects.requireNonNull(errorHandler, "Error handler must not be null");
     }
 
     /**
@@ -67,9 +74,7 @@ public final class CliApplication {
         try {
             parsedArgs = commandParser.parse(args);
         } catch (CliUsageException exception) {
-            CliOutputFormatter.printUsageError(errorOutput, exception.getMessage());
-
-            return CliExitCode.USAGE_ERROR;
+            return errorHandler.handleUsageError(exception, errorOutput);
         }
 
         return execute(parsedArgs, standardOutput, errorOutput);
@@ -97,7 +102,7 @@ public final class CliApplication {
 
             case SearchCommand searchCommand -> executeServiceCommand(args.databaseFile(), searchCommand, standardOutput, errorOutput);
 
-            case DeleteCommand _ -> printNotImplemented(errorOutput, "delete");
+            case DeleteCommand deleteCommand -> executeServiceCommand(args.databaseFile(), deleteCommand, standardOutput, errorOutput);
         };
     }
 
@@ -109,9 +114,7 @@ public final class CliApplication {
                 return executeWithService(service, command, standardOutput, errorOutput);
             }
         } catch (IOException | RuntimeException exception) {
-            CliOutputFormatter.printOperationError(errorOutput, operationFailureMessage(exception));
-
-            return CliExitCode.FAILURE;
+            return errorHandler.handleOperationError(exception, errorOutput);
         }
     }
 
@@ -134,7 +137,7 @@ public final class CliApplication {
                             return CliExitCode.SUCCESS;
                         })
                         .orElseGet(() -> {
-                            CliOutputFormatter.printOperationError(errorOutput, "Document " + showCommand.documentId() + " does not exist.");
+                            CliOutputFormatter.printMissingDocument(errorOutput, showCommand.documentId());
                             return CliExitCode.FAILURE;
                         });
 
@@ -152,6 +155,18 @@ public final class CliApplication {
                 yield CliExitCode.SUCCESS;
             }
 
+            case DeleteCommand deleteCommand -> {
+                boolean deleted = service.deleteDocument(deleteCommand.documentId());
+
+                if (deleted) {
+                    CliOutputFormatter.printDeletedDocument(standardOutput, deleteCommand.documentId());
+                    yield CliExitCode.SUCCESS;
+                }
+
+                CliOutputFormatter.printMissingDocument(errorOutput, deleteCommand.documentId());
+                yield CliExitCode.FAILURE;
+            }
+
 
             default -> throw new IllegalStateException("Command does not use the application service: " + command.getClass().getSimpleName());
         };
@@ -164,10 +179,6 @@ public final class CliApplication {
         );
     }
 
-    private int printNotImplemented(PrintStream errorOutput, String command) {
-        CliOutputFormatter.printUsageError(errorOutput, "Command is not implemented yet: " + command);
-        return CliExitCode.USAGE_ERROR;
-    }
 
     private static void createDatabaseParentDirectory(Path databaseFile) throws IOException {
         Path parent = databaseFile.getParent();
@@ -175,16 +186,6 @@ public final class CliApplication {
         if (parent != null) {
             Files.createDirectories(parent);
         }
-    }
-
-    private static String operationFailureMessage(Throwable exception) {
-        String message = exception.getMessage();
-
-        if (message == null || message.isBlank()) {
-            return exception.getClass().getSimpleName();
-        }
-
-        return message;
     }
 
 
