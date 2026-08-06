@@ -9,5 +9,6 @@ module noteindex.importer {
     uses cz.martim12.noteindex.importer.api.DocumentImporter;
 
     provides cz.martim12.noteindex.importer.api.DocumentImporter
-            with cz.martim12.noteindex.importer.builtin.TxtDocumentImporter;
+            with cz.martim12.noteindex.importer.builtin.TxtDocumentImporter,
+                 cz.martim12.noteindex.importer.builtin.MarkdownDocumentImporter;
 }
