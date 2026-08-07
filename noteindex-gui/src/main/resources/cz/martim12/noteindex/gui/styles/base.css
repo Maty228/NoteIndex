@@ -221,3 +221,66 @@
     -fx-pref-width: 42px;
     -fx-pref-height: 42px;
 }
+
+.document-cell-content {
+    -fx-spacing: 5px;
+}
+
+.document-cell-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.document-cell-metadata {
+    -fx-font-size: 11px;
+}
+
+.document-sort-box {
+    -fx-pref-height: 30px;
+    -fx-background-radius: 7px;
+}
+
+.document-viewer {
+    -fx-background-color: transparent;
+}
+
+.viewer-header {
+    -fx-min-height: 78px;
+}
+
+.viewer-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+}
+
+.viewer-metadata {
+    -fx-font-size: 11px;
+}
+
+.viewer-source {
+    -fx-font-size: 10px;
+}
+
+.viewer-mode-button {
+    -fx-min-height: 30px;
+    -fx-padding: 0 12px;
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+}
+
+.viewer-content {
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-padding: 18px;
+}
+
+.viewer-preview-content {
+    -fx-font-family: "System";
+    -fx-font-size: 14px;
+}
+
+.viewer-source-content {
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 12px;
+}

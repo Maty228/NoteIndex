@@ -248,3 +248,57 @@
 .status-dot-error {
     -fx-text-fill: #d64545;
 }
+
+.document-cell-title {
+    -fx-text-fill: #242931;
+}
+
+.document-cell-metadata {
+    -fx-text-fill: #8a929e;
+}
+
+.document-sort-box {
+    -fx-background-color: #f1f3f6;
+    -fx-border-color: #e1e4e9;
+    -fx-border-radius: 7px;
+}
+
+.viewer-header {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #eceef2 transparent;
+}
+
+.viewer-title {
+    -fx-text-fill: #20242b;
+}
+
+.viewer-metadata,
+.viewer-source {
+    -fx-text-fill: #858d99;
+}
+
+.viewer-mode-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6b7280;
+}
+
+.viewer-mode-button:hover {
+    -fx-background-color: #f1f3f6;
+}
+
+.viewer-mode-button:selected {
+    -fx-background-color: rgba(101, 84, 232, 0.13);
+    -fx-text-fill: #5142c8;
+}
+
+.viewer-content {
+    -fx-control-inner-background: #ffffff;
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #252a32;
+    -fx-highlight-fill: #6554e8;
+    -fx-highlight-text-fill: #ffffff;
+}
+
+.viewer-content .content {
+    -fx-background-color: #ffffff;
+}

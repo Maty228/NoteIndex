@@ -4,6 +4,7 @@ import cz.martim12.noteindex.application.api.NoteIndexApplications;
 import cz.martim12.noteindex.gui.application.GuiApplicationContext;
 import cz.martim12.noteindex.gui.application.GuiDatabasePaths;
 import cz.martim12.noteindex.gui.application.GuiLifecycleState;
+import cz.martim12.noteindex.gui.main.MainViewModel;
 import cz.martim12.noteindex.gui.main.MainWindow;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -28,6 +29,7 @@ public final class NoteIndexGui extends Application {
     public static final double MINIMUM_HEIGHT = 600;
 
     private GuiApplicationContext applicationContext;
+    private MainViewModel mainViewModel;
     private MainWindow mainWindow;
 
     @Override
@@ -76,9 +78,14 @@ public final class NoteIndexGui extends Application {
                                                 }
 
                                                 if (failure == null) {
-                                                    mainWindow.showReady(databaseFile);
-                                                    return;
+                                                    mainViewModel = new MainViewModel(service);
 
+                                                    mainWindow.connect(mainViewModel);
+                                                    mainWindow.showReady(databaseFile);
+
+                                                    mainViewModel.refresh();
+
+                                                    return;
                                                 }
 
                                                 Throwable actualFailure = unwrapFailure(failure);
@@ -95,6 +102,10 @@ public final class NoteIndexGui extends Application {
 
     @Override
     public void stop() {
+        if (mainViewModel != null) {
+            mainViewModel.close();
+        }
+
         if (applicationContext != null) {
             applicationContext.close();
         }

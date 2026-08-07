@@ -1,5 +1,12 @@
 package cz.martim12.noteindex.gui.main;
 
+import cz.martim12.noteindex.core.model.DocumentSummary;
+import cz.martim12.noteindex.gui.library.DocumentListCell;
+import cz.martim12.noteindex.gui.viewer.DocumentViewer;
+import javafx.collections.ListChangeListener;
+import javafx.scene.Node;
+import javafx.scene.control.ComboBox;
+import javafx.util.StringConverter;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -46,6 +53,23 @@ public final class MainWindow {
     private Button toolbarImportButton;
     private Button welcomeImportButton;
 
+    private ToggleButton allNotesButton;
+    private ToggleButton recentButton;
+    private ToggleButton textNotesButton;
+    private ToggleButton markdownNotesButton;
+
+    private ComboBox<MainViewModel.DocumentSort> sortBox;
+    private ListView<DocumentSummary> documentList;
+
+    private Label documentCountLabel;
+    private Label statusDocumentCount;
+
+    private final DocumentViewer documentViewer;
+    private final Node welcomeState;
+    private final StackPane viewerStack;
+
+    private MainViewModel viewModel;
+
     private boolean sidebarVisible = true;
 
     public MainWindow() {
@@ -55,6 +79,14 @@ public final class MainWindow {
         sidebar = createSidebar();
 
         BorderPane documentPane = createDocumentListPane();
+
+        documentViewer = new DocumentViewer();
+        welcomeState = createWelcomeState();
+
+        viewerStack = new StackPane(welcomeState, documentViewer.root());
+
+        documentViewer.root().setVisible(false);
+        documentViewer.root().setManaged(false);
 
         BorderPane viewerPane = createViewerPane();
 
@@ -152,6 +184,111 @@ public final class MainWindow {
         setStatus("Library unavailable", "status-dot-error");
     }
 
+    public void connect(MainViewModel viewModel) {
+        this.viewModel = viewModel;
+
+        documentList.setItems(viewModel.visibleDocuments());
+
+        allNotesButton.setOnAction(event ->
+                viewModel.setLibraryView(MainViewModel.LibraryView.ALL)
+        );
+
+        recentButton.setOnAction(event ->
+                viewModel.setLibraryView(MainViewModel.LibraryView.RECENT)
+        );
+
+        textNotesButton.setOnAction(event ->
+                viewModel.setLibraryView(MainViewModel.LibraryView.TXT)
+        );
+
+        markdownNotesButton.setOnAction(event ->
+                viewModel.setLibraryView(MainViewModel.LibraryView.MARKDOWN)
+        );
+
+        sortBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                viewModel.setDocumentSort(newValue);
+            }
+        });
+
+        documentList.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> viewModel.selectDocument(newValue)
+        );
+
+        viewModel.selectedDocumentProperty().addListener(
+                (observable, oldValue, newValue) -> {
+                    if (newValue == null) {
+                        documentViewer.showEmpty();
+                    } else {
+                        documentViewer.showDocument(newValue);
+                    }
+                }
+        );
+
+        viewModel.totalDocumentCountProperty().addListener(
+                (observable, oldValue, newValue) -> updateDocumentCount(newValue.intValue())
+        );
+
+        viewModel.libraryLoadingProperty().addListener(
+                (observable, oldValue, loading) -> {
+                    if (loading) {
+                        setStatus("Loading documents...", "status-dot-loading");
+                    } else {
+                        setStatus("Library ready", "status-dot-ready");
+                    }
+                }
+        );
+
+        viewModel.errorProperty().addListener(
+                (observable, oldValue, failure) -> {
+                    if (failure != null) {
+                        showOperationError(failure);
+                    }
+                }
+        );
+
+        documentList.getItems().addListener((ListChangeListener<DocumentSummary>) change -> {
+            if (!documentList.getItems().isEmpty()
+                    && documentList.getSelectionModel().getSelectedItem() == null) {
+
+                documentList.getSelectionModel().selectFirst();
+            }
+        });
+
+        updateDocumentCount(viewModel.totalDocumentCountProperty().get());
+    }
+
+    private void updateDocumentCount(int count) {
+        documentCountLabel.setText(count + (count == 1 ? " note" : " notes"));
+        statusDocumentCount.setText(count + (count == 1 ? " document" : " documents"));
+
+        boolean empty = count == 0;
+
+        welcomeState.setVisible(empty);
+        welcomeState.setManaged(empty);
+
+        documentViewer.root().setVisible(!empty);
+        documentViewer.root().setManaged(!empty);
+
+        if (empty) {
+            documentViewer.showEmpty();
+        }
+    }
+
+    private void showOperationError(Throwable failure) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+
+        alert.setTitle("NoteIndex");
+        alert.setHeaderText("The operation could not be completed.");
+        alert.setContentText(displayMessage(failure));
+
+        if (root.getScene() != null) {
+            alert.initOwner(root.getScene().getWindow());
+        }
+
+        alert.showAndWait();
+    }
+
     private HBox createToolbar() {
         Button sidebarButton =
                 createIconButton("☰", "Toggle sidebar");
@@ -197,30 +334,37 @@ public final class MainWindow {
 
         ToggleGroup navigationGroup = new ToggleGroup();
 
-        ToggleButton allNotes = createNavigationButton("All Notes", navigationGroup);
+        allNotesButton = createNavigationButton("All Notes", navigationGroup);
+        recentButton = createNavigationButton("Recent", navigationGroup);
 
-        ToggleButton recent = createNavigationButton("Recent", navigationGroup);
-
-        allNotes.setSelected(true);
+        allNotesButton.setSelected(true);
 
         Label formatsHeading = createSectionHeading("FORMATS");
 
-        ToggleButton textNotes = createNavigationButton("TXT", navigationGroup);
-
-        ToggleButton markdownNotes = createNavigationButton("Markdown", navigationGroup);
+        textNotesButton = createNavigationButton("TXT", navigationGroup);
+        markdownNotesButton = createNavigationButton("Markdown", navigationGroup);
 
         Region expandingSpace = new Region();
-
         VBox.setVgrow(expandingSpace, Priority.ALWAYS);
 
         Separator separator = new Separator();
 
         Button settings = createSidebarAction("Settings");
-
         Button about = createSidebarAction("About");
 
         VBox sidebarPane = new VBox(
-                6, libraryHeading, allNotes, recent, createSectionSpacing(), formatsHeading, textNotes, markdownNotes, expandingSpace, separator, settings, about
+                6,
+                libraryHeading,
+                allNotesButton,
+                recentButton,
+                createSectionSpacing(),
+                formatsHeading,
+                textNotesButton,
+                markdownNotesButton,
+                expandingSpace,
+                separator,
+                settings,
+                about
         );
 
         sidebarPane.getStyleClass().add("library-sidebar");
@@ -234,56 +378,70 @@ public final class MainWindow {
 
     private BorderPane createDocumentListPane() {
         Label title = new Label("Documents");
-
         title.getStyleClass().add("pane-title");
 
-        Label documentCount = new Label("0 notes");
+        documentCountLabel = new Label("0 notes");
+        documentCountLabel.getStyleClass().add("pane-metadata");
 
-        documentCount.getStyleClass().add("pane-metadata");
+        sortBox = new ComboBox<>();
+
+        sortBox.getItems().setAll(MainViewModel.DocumentSort.values());
+        sortBox.setValue(MainViewModel.DocumentSort.NEWEST);
+        sortBox.setPrefWidth(125);
+        sortBox.getStyleClass().add("document-sort-box");
+
+        sortBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(MainViewModel.DocumentSort sort) {
+                if (sort == null) {
+                    return "";
+                }
+
+                return switch (sort) {
+                    case NEWEST -> "Newest";
+                    case OLDEST -> "Oldest";
+                    case TITLE_ASCENDING -> "Title A–Z";
+                    case TITLE_DESCENDING -> "Title Z–A";
+                };
+            }
+
+            @Override
+            public MainViewModel.DocumentSort fromString(String value) {
+                throw new UnsupportedOperationException();
+            }
+        });
 
         Region headingSpace = new Region();
-
         HBox.setHgrow(headingSpace, Priority.ALWAYS);
 
-        HBox heading = new HBox(8, title, headingSpace, documentCount);
+        HBox heading = new HBox(8, title, headingSpace, documentCountLabel, sortBox);
 
         heading.setAlignment(Pos.CENTER_LEFT);
         heading.getStyleClass().add("pane-heading");
 
-        ListView<String> documentList = new ListView<>();
-
+        documentList = new ListView<>();
         documentList.getStyleClass().add("document-list");
 
+        documentList.setCellFactory(list -> new DocumentListCell());
         documentList.setPlaceholder(createListPlaceholder());
 
         BorderPane pane = new BorderPane();
-        pane.getStyleClass().add("document-list-pane");
 
+        pane.getStyleClass().add("document-list-pane");
         pane.setTop(heading);
         pane.setCenter(documentList);
 
-        pane.setMinWidth(260);
-        pane.setPrefWidth(340);
+        pane.setMinWidth(280);
+        pane.setPrefWidth(360);
 
         return pane;
     }
 
     private BorderPane createViewerPane() {
-        Label title = new Label("Document");
-
-        title.getStyleClass().add("pane-title");
-
-        HBox heading = new HBox(title);
-
-        heading.setAlignment(Pos.CENTER_LEFT);
-        heading.getStyleClass().add("pane-heading");
-
         BorderPane viewer = new BorderPane();
 
         viewer.getStyleClass().add("document-viewer-pane");
-
-        viewer.setTop(heading);
-        viewer.setCenter(createWelcomeState());
+        viewer.setCenter(viewerStack);
 
         return viewer;
     }
@@ -391,9 +549,8 @@ public final class MainWindow {
     }
 
     private HBox createStatusBar() {
-        Label documentCount = new Label("0 documents");
-
-        documentCount.getStyleClass().add("status-text");
+        statusDocumentCount = new Label("0 documents");
+        statusDocumentCount.getStyleClass().add("status-text");
 
         Region spacing = new Region();
 
@@ -403,7 +560,7 @@ public final class MainWindow {
 
         statusText.getStyleClass().add("status-text");
 
-        HBox statusBar = new HBox(7, documentCount, spacing, statusDot, statusText);
+        HBox statusBar = new HBox(7, statusDocumentCount, spacing, statusDot, statusText);
 
         statusBar.setAlignment(Pos.CENTER_LEFT);
 
@@ -481,7 +638,7 @@ public final class MainWindow {
 
             workspace.setDividerPositions(0.34);
         } else {
-            workspace.getItems().add(0, sidebar);
+            workspace.getItems().addFirst(sidebar);
 
             workspace.setDividerPositions(0.18, 0.46);
         }
