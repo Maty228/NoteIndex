@@ -4,6 +4,7 @@ import cz.martim12.noteindex.application.api.NoteIndexApplications;
 import cz.martim12.noteindex.gui.application.GuiApplicationContext;
 import cz.martim12.noteindex.gui.application.GuiDatabasePaths;
 import cz.martim12.noteindex.gui.application.GuiLifecycleState;
+import cz.martim12.noteindex.gui.importflow.ImportCoordinator;
 import cz.martim12.noteindex.gui.main.MainViewModel;
 import cz.martim12.noteindex.gui.main.MainWindow;
 import javafx.application.Application;
@@ -29,6 +30,8 @@ public final class NoteIndexGui extends Application {
     public static final double MINIMUM_HEIGHT = 600;
 
     private GuiApplicationContext applicationContext;
+
+    private ImportCoordinator importCoordinator;
     private MainViewModel mainViewModel;
     private MainWindow mainWindow;
 
@@ -79,8 +82,10 @@ public final class NoteIndexGui extends Application {
 
                                                 if (failure == null) {
                                                     mainViewModel = new MainViewModel(service);
+                                                    importCoordinator = new ImportCoordinator(service);
 
                                                     mainWindow.connect(mainViewModel);
+                                                    mainWindow.connectImport(importCoordinator);
                                                     mainWindow.showReady(databaseFile);
 
                                                     mainViewModel.refresh();
@@ -102,6 +107,10 @@ public final class NoteIndexGui extends Application {
 
     @Override
     public void stop() {
+        if (importCoordinator != null) {
+            importCoordinator.close();
+        }
+
         if (mainViewModel != null) {
             mainViewModel.close();
         }

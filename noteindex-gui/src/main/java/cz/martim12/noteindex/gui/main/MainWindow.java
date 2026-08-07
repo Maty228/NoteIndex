@@ -1,11 +1,16 @@
 package cz.martim12.noteindex.gui.main;
 
 import cz.martim12.noteindex.core.model.DocumentSummary;
+import cz.martim12.noteindex.gui.importflow.ImportCoordinator;
 import cz.martim12.noteindex.gui.library.DocumentListCell;
 import cz.martim12.noteindex.gui.viewer.DocumentViewer;
+import cz.martim12.noteindex.gui.importflow.ImportBatchResult;
+import cz.martim12.noteindex.gui.importflow.ImportProgressDialog;
+
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
+import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -29,8 +34,15 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextAlignment;
+import javafx.application.Platform;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletionException;
 
 /**
  * Main NoteIndex workspace.
@@ -52,6 +64,9 @@ public final class MainWindow {
 
     private Button toolbarImportButton;
     private Button welcomeImportButton;
+
+    private ImportCoordinator importCoordinator;
+    private boolean importInProgress;
 
     private ToggleButton allNotesButton;
     private ToggleButton recentButton;
@@ -273,6 +288,10 @@ public final class MainWindow {
         if (empty) {
             documentViewer.showEmpty();
         }
+    }
+
+    public void connectImport(ImportCoordinator importCoordinator) {
+        this.importCoordinator = importCoordinator;
     }
 
     private void showOperationError(Throwable failure) {
@@ -578,7 +597,7 @@ public final class MainWindow {
 
         button.setAccessibleText("Import notes");
 
-        button.setOnAction(event -> showImportPlaceholder());
+        button.setOnAction(event -> handleImportRequest());
 
         return button;
     }
@@ -694,6 +713,162 @@ public final class MainWindow {
         }
 
         alert.showAndWait();
+    }
+    private void handleImportRequest() {
+        if (importCoordinator == null) {
+            showImportPlaceholder();
+            return;
+        }
+
+        if (root.getScene() == null || importInProgress) {
+            return;
+        }
+
+        FileChooser chooser = createImportFileChooser();
+
+        List<File> selectedFiles = chooser.showOpenMultipleDialog(
+                root.getScene().getWindow()
+        );
+
+        if (selectedFiles == null || selectedFiles.isEmpty()) {
+            return;
+        }
+
+        List<Path> sources = selectedFiles.stream()
+                .map(File::toPath)
+                .toList();
+
+        importFiles(sources);
+    }
+
+    private FileChooser createImportFileChooser() {
+        FileChooser chooser = new FileChooser();
+
+        chooser.setTitle("Import notes");
+
+        Set<String> extensions = importCoordinator.supportedExtensions();
+
+        List<String> supportedPatterns = extensions.stream()
+                .sorted()
+                .map(extension -> "*." + extension)
+                .toList();
+
+        if (!supportedPatterns.isEmpty()) {
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter(
+                            "Supported notes",
+                            supportedPatterns.toArray(String[]::new)
+                    )
+            );
+        }
+
+        if (extensions.contains("txt")) {
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter(
+                            "Plain text",
+                            "*.txt"
+                    )
+            );
+        }
+
+        List<String> markdownPatterns = extensions.stream()
+                .filter(extension -> extension.equals("md") || extension.equals("markdown"))
+                .sorted()
+                .map(extension -> "*." + extension)
+                .toList();
+
+        if (!markdownPatterns.isEmpty()) {
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter(
+                            "Markdown",
+                            markdownPatterns.toArray(String[]::new)
+                    )
+            );
+        }
+
+        return chooser;
+    }
+
+    private void importFiles(List<Path> sources) {
+        importInProgress = true;
+        setImportDisabled(true);
+
+        ImportProgressDialog progressDialog = new ImportProgressDialog(
+                root.getScene().getWindow(),
+                sources.size()
+        );
+
+        progressDialog.show();
+
+        importCoordinator.importFiles(sources, progressDialog::update)
+                .whenComplete((result, failure) ->
+                        Platform.runLater(() -> {
+                            if (failure != null) {
+                                importInProgress = false;
+                                setImportDisabled(false);
+
+                                showOperationError(unwrapFailure(failure));
+                                return;
+                            }
+
+                            progressDialog.showResult(result);
+                            finishImport(result);
+                        })
+                );
+    }
+
+    private void finishImport(ImportBatchResult result) {
+        if (result.importedDocuments().isEmpty()) {
+            importInProgress = false;
+            setImportDisabled(false);
+
+            setStatus("No notes imported", "status-dot-error");
+            return;
+        }
+
+        long lastImportedId = result.importedDocuments().getLast().id();
+
+        allNotesButton.setSelected(true);
+        viewModel.setLibraryView(MainViewModel.LibraryView.ALL);
+
+        viewModel.refresh().whenComplete((ignored, failure) ->
+                Platform.runLater(() -> {
+                    importInProgress = false;
+                    setImportDisabled(false);
+
+                    if (failure != null) {
+                        return;
+                    }
+
+                    selectDocument(lastImportedId);
+
+                    int importedCount = result.importedDocuments().size();
+
+                    setStatus(
+                            "Imported " + importedCount + (importedCount == 1 ? " note" : " notes"),
+                            "status-dot-ready"
+                    );
+                })
+        );
+    }
+
+    private void selectDocument(long documentId) {
+        documentList.getItems().stream()
+                .filter(document -> document.id() == documentId)
+                .findFirst()
+                .ifPresent(document ->
+                        documentList.getSelectionModel().select(document)
+                );
+    }
+
+    private static Throwable unwrapFailure(Throwable failure) {
+        Throwable current = failure;
+
+        while (current instanceof CompletionException && current.getCause() != null) {
+            current = current.getCause();
+        }
+
+        return current;
     }
 
     private static String displayMessage(Throwable failure) {
