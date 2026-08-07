@@ -5,11 +5,16 @@ import cz.martim12.noteindex.gui.importflow.ImportCoordinator;
 import cz.martim12.noteindex.gui.library.DocumentListCell;
 import cz.martim12.noteindex.gui.viewer.DocumentViewer;
 import cz.martim12.noteindex.gui.importflow.ImportBatchResult;
-import cz.martim12.noteindex.gui.importflow.ImportProgressDialog;
 import cz.martim12.noteindex.gui.importflow.ImportFileSupport;
 import cz.martim12.noteindex.core.model.SearchResult;
 import cz.martim12.noteindex.gui.search.SearchCoordinator;
 import cz.martim12.noteindex.gui.search.SearchResultCell;
+import cz.martim12.noteindex.gui.settings.SettingsView;
+import cz.martim12.noteindex.gui.component.ConfirmationPane;
+import cz.martim12.noteindex.gui.component.MessagePane;
+import cz.martim12.noteindex.gui.component.ModalHost;
+import cz.martim12.noteindex.gui.importflow.ImportProgressPane;
+
 
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
@@ -20,7 +25,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -48,15 +52,15 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.geometry.Side;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 
@@ -69,6 +73,10 @@ public final class MainWindow {
     private final VBox sidebar;
     private final SplitPane workspace;
     private final StackPane centerStack;
+
+    private final ModalHost modalHost;
+
+    private boolean fileChooserOpening;
 
     private final StackPane startupOverlay;
     private final ProgressIndicator startupProgress;
@@ -119,6 +127,16 @@ public final class MainWindow {
     private final Node welcomeState;
     private final StackPane viewerStack;
 
+    private final HBox topToolbar;
+    private final HBox statusBar;
+
+    private boolean settingsVisible;
+
+    private Button settingsButton;
+    private Button aboutButton;
+
+    private SettingsView settingsView;
+
     private MainViewModel viewModel;
 
     private boolean sidebarVisible = true;
@@ -163,13 +181,21 @@ public final class MainWindow {
         statusDot = new Label("●");
         statusText = new Label("Not connected");
 
-        root.setTop(createToolbar());
+        topToolbar = createToolbar();
+        statusBar = createStatusBar();
+
+        root.setTop(topToolbar);
         root.setCenter(centerStack);
-        root.setBottom(createStatusBar());
+        root.setBottom(statusBar);
 
         dropOverlay = createDropOverlay();
+        modalHost = new ModalHost();
 
-        windowStack = new StackPane(root, dropOverlay);
+        windowStack = new StackPane(
+                root,
+                dropOverlay,
+                modalHost.root()
+        );
 
         configureDragAndDrop();
         configureDeletionActions();
@@ -406,6 +432,8 @@ public final class MainWindow {
     }
 
     private void configureDragAndDrop() {
+
+
         windowStack.setOnDragOver(this::handleDragOver);
         windowStack.setOnDragDropped(this::handleDragDropped);
 
@@ -422,11 +450,15 @@ public final class MainWindow {
         if (!dragboard.hasFiles()
                 || importCoordinator == null
                 || importFileSupport == null
-                || importInProgress) {
+                || importInProgress
+                || settingsVisible
+                || modalHost.isShowing()) {
 
             hideDropOverlay();
             return;
         }
+
+
 
         List<Path> paths = dragboard.getFiles().stream()
                 .map(File::toPath)
@@ -450,7 +482,9 @@ public final class MainWindow {
         if (dragboard.hasFiles()
                 && importCoordinator != null
                 && importFileSupport != null
-                && !importInProgress) {
+                && !importInProgress
+                && !settingsVisible
+                && !modalHost.isShowing()) {
 
             List<Path> paths = dragboard.getFiles().stream()
                     .map(File::toPath)
@@ -656,8 +690,13 @@ public final class MainWindow {
     private void updateSearchResultCount() {
         int count = searchResultList.getItems().size();
 
-        if (count >= 50) {
-            documentCountLabel.setText("50+ results");
+        if (searchCoordinator != null
+                && count >= searchCoordinator.resultLimit()) {
+
+            documentCountLabel.setText(
+                    searchCoordinator.resultLimit() + "+ results"
+            );
+
             return;
         }
 
@@ -691,17 +730,14 @@ public final class MainWindow {
     }
 
     private void showOperationError(Throwable failure) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
+        MessagePane message = new MessagePane(
+                "NoteIndex",
+                "The operation could not be completed",
+                displayMessage(failure),
+                modalHost::hide
+        );
 
-        alert.setTitle("NoteIndex");
-        alert.setHeaderText("The operation could not be completed.");
-        alert.setContentText(displayMessage(failure));
-
-        if (root.getScene() != null) {
-            alert.initOwner(root.getScene().getWindow());
-        }
-
-        alert.showAndWait();
+        modalHost.show(message.root());
     }
 
     private HBox createToolbar() {
@@ -765,8 +801,8 @@ public final class MainWindow {
 
         Separator separator = new Separator();
 
-        Button settings = createSidebarAction("Settings");
-        Button about = createSidebarAction("About");
+        settingsButton = createSidebarAction("Settings");
+        aboutButton = createSidebarAction("About");
 
         VBox sidebarPane = new VBox(
                 6,
@@ -779,8 +815,8 @@ public final class MainWindow {
                 markdownNotesButton,
                 expandingSpace,
                 separator,
-                settings,
-                about
+                settingsButton,
+                aboutButton
         );
 
         sidebarPane.getStyleClass().add("library-sidebar");
@@ -1090,6 +1126,7 @@ public final class MainWindow {
         DocumentSummary selected = selectedDocumentSummary();
 
         MenuItem deleteItem = new MenuItem("Delete selected note");
+        deleteItem.getStyleClass().add("danger-menu-item");
 
         deleteItem.setDisable(selected == null || deleteInProgress);
 
@@ -1098,6 +1135,7 @@ public final class MainWindow {
         );
 
         ContextMenu menu = new ContextMenu(deleteItem);
+        menu.getStyleClass().add("noteindex-context-menu");
 
         menu.show(owner, Side.BOTTOM, 0, 4);
     }
@@ -1113,44 +1151,24 @@ public final class MainWindow {
     }
 
     private void requestDeleteDocument(DocumentSummary document) {
-        if (document == null || deleteInProgress) {
+        if (document == null || deleteInProgress || modalHost.isShowing()) {
             return;
         }
 
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-
-        alert.setTitle("Delete note");
-        alert.setHeaderText("Delete \"" + document.title() + "\"?");
-
-        alert.setContentText(
+        ConfirmationPane confirmation = new ConfirmationPane(
+                "Delete note",
+                "Delete \"" + document.title() + "\"?",
                 "This removes the note from NoteIndex. "
-                        + "The original file will not be deleted."
-        );
-
-        if (root.getScene() != null) {
-            alert.initOwner(root.getScene().getWindow());
-        }
-
-        ButtonType deleteButtonType = new ButtonType(
+                        + "The original file will not be deleted.",
                 "Delete",
-                ButtonBar.ButtonData.OK_DONE
+                modalHost::hide,
+                () -> {
+                    modalHost.hide();
+                    deleteDocument(document);
+                }
         );
 
-        alert.getButtonTypes().setAll(
-                deleteButtonType,
-                ButtonType.CANCEL
-        );
-
-        Button deleteButton = (Button) alert.getDialogPane()
-                .lookupButton(deleteButtonType);
-
-        deleteButton.getStyleClass().add("danger-button");
-
-        ButtonType result = alert.showAndWait().orElse(ButtonType.CANCEL);
-
-        if (result == deleteButtonType) {
-            deleteDocument(document);
-        }
+        modalHost.show(confirmation.root());
     }
 
     private void deleteDocument(DocumentSummary document) {
@@ -1301,45 +1319,87 @@ public final class MainWindow {
     }
 
     private void showImportPlaceholder() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        MessagePane message = new MessagePane(
+                "Import notes",
+                "Import is not ready",
+                "The import service is not currently available.",
+                modalHost::hide
+        );
 
-        alert.setTitle("Import notes");
-
-        alert.setHeaderText("The NoteIndex library is ready.");
-
-        alert.setContentText("File selection and full-window drag and drop will be connected in the import workflow.");
-
-        if (root.getScene() != null) {
-            alert.initOwner(root.getScene().getWindow());
-        }
-
-        alert.showAndWait();
+        modalHost.show(message.root());
     }
+
     private void handleImportRequest() {
         if (importCoordinator == null) {
             showImportPlaceholder();
             return;
         }
 
-        if (root.getScene() == null || importInProgress) {
+        if (root.getScene() == null
+                || importInProgress
+                || fileChooserOpening
+                || modalHost.isShowing()) {
+
             return;
         }
 
-        FileChooser chooser = createImportFileChooser();
+        setFileChooserOpening(true);
 
-        List<File> selectedFiles = chooser.showOpenMultipleDialog(
-                root.getScene().getWindow()
+        /*
+         * Give JavaFX one visual pulse before opening the blocking
+         * native file chooser.
+         */
+        PauseTransition delay = new PauseTransition(
+                Duration.millis(90)
         );
 
-        if (selectedFiles == null || selectedFiles.isEmpty()) {
-            return;
+        delay.setOnFinished(event -> {
+            FileChooser chooser = createImportFileChooser();
+
+            List<File> selectedFiles;
+
+            try {
+                selectedFiles = chooser.showOpenMultipleDialog(
+                        root.getScene().getWindow()
+                );
+            } finally {
+                setFileChooserOpening(false);
+            }
+
+            if (selectedFiles == null || selectedFiles.isEmpty()) {
+                return;
+            }
+
+            List<Path> sources = selectedFiles.stream()
+                    .map(File::toPath)
+                    .toList();
+
+            importFiles(sources);
+        });
+
+        delay.play();
+    }
+
+    private void setFileChooserOpening(boolean opening) {
+        fileChooserOpening = opening;
+
+        setImportDisabled(opening || importInProgress);
+
+        if (toolbarImportButton != null) {
+            toolbarImportButton.setText(opening ? "…" : "+");
+
+            if (opening) {
+                toolbarImportButton.getStyleClass().add("import-button-busy");
+            } else {
+                toolbarImportButton.getStyleClass().remove("import-button-busy");
+            }
         }
 
-        List<Path> sources = selectedFiles.stream()
-                .map(File::toPath)
-                .toList();
-
-        importFiles(sources);
+        if (opening) {
+            setStatus("Opening file chooser…", "status-dot-loading");
+        } else if (!importInProgress) {
+            setStatus("Library ready", "status-dot-ready");
+        }
     }
 
     private FileChooser createImportFileChooser() {
@@ -1394,25 +1454,25 @@ public final class MainWindow {
         importInProgress = true;
         setImportDisabled(true);
 
-        ImportProgressDialog progressDialog = new ImportProgressDialog(
-                root.getScene().getWindow(),
-                sources.size()
-        );
+        ImportProgressPane progressPane = new ImportProgressPane(sources.size());
 
-        progressDialog.show();
+        progressPane.setOnClose(modalHost::hide);
 
-        importCoordinator.importFiles(sources, progressDialog::update)
+        modalHost.show(progressPane.root());
+
+        importCoordinator.importFiles(sources, progressPane::update)
                 .whenComplete((result, failure) ->
                         Platform.runLater(() -> {
                             if (failure != null) {
                                 importInProgress = false;
                                 setImportDisabled(false);
 
+                                modalHost.hide();
                                 showOperationError(unwrapFailure(failure));
                                 return;
                             }
 
-                            progressDialog.showResult(result);
+                            progressPane.showResult(result);
                             finishImport(result);
                         })
                 );
@@ -1476,6 +1536,13 @@ public final class MainWindow {
             searchField.requestFocus();
             searchField.selectAll();
         });
+
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE && settingsVisible) {
+                hideSettings();
+                event.consume();
+            }
+        });
     }
 
     private void configureDeletionActions() {
@@ -1486,8 +1553,10 @@ public final class MainWindow {
                         documentList.getSelectionModel().getSelectedItem()
                 )
         );
+        deleteDocumentItem.getStyleClass().add("danger-menu-item");
 
         ContextMenu documentMenu = new ContextMenu(deleteDocumentItem);
+        documentMenu.getStyleClass().add("noteindex-context-menu");
 
         documentMenu.setOnShowing(event ->
                 deleteDocumentItem.setDisable(
@@ -1499,6 +1568,8 @@ public final class MainWindow {
         documentList.setContextMenu(documentMenu);
 
         MenuItem deleteSearchResultItem = new MenuItem("Delete from NoteIndex");
+        deleteSearchResultItem.getStyleClass().add("danger-menu-item");
+
 
         deleteSearchResultItem.setOnAction(event -> {
             SearchResult result = searchResultList.getSelectionModel().getSelectedItem();
@@ -1509,6 +1580,8 @@ public final class MainWindow {
         });
 
         ContextMenu searchMenu = new ContextMenu(deleteSearchResultItem);
+        searchMenu.getStyleClass().add("noteindex-context-menu");
+
 
         searchMenu.setOnShowing(event ->
                 deleteSearchResultItem.setDisable(
@@ -1550,6 +1623,42 @@ public final class MainWindow {
         return event.getCode() == KeyCode.DELETE
                 || event.getCode() == KeyCode.BACK_SPACE;
     }
+
+    public void connectSettings(SettingsView settingsView) {
+        this.settingsView = Objects.requireNonNull(
+                settingsView,
+                "Settings view must not be null"
+        );
+
+        settingsView.setOnClose(this::hideSettings);
+
+        settingsButton.setOnAction(event -> showSettings(false));
+        aboutButton.setOnAction(event -> showSettings(true));
+    }
+
+    private void showSettings(boolean showAbout) {
+        settingsVisible = true;
+
+        root.setTop(null);
+        root.setBottom(null);
+        root.setCenter(settingsView.root());
+
+        if (showAbout) {
+            settingsView.showAbout();
+        } else {
+            settingsView.showTop();
+        }
+    }
+
+    private void hideSettings() {
+        settingsVisible = false;
+
+        root.setTop(topToolbar);
+        root.setCenter(centerStack);
+        root.setBottom(statusBar);
+    }
+
+
 
     private static Throwable unwrapFailure(Throwable failure) {
         Throwable current = failure;

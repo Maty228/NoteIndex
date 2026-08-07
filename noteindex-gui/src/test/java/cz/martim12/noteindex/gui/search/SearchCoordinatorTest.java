@@ -16,9 +16,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SearchCoordinatorTest {
 
@@ -31,9 +29,7 @@ class SearchCoordinatorTest {
                 result(1, "Probability", 3.2)
         );
 
-        SearchCoordinator coordinator = createCoordinator(service, 0);
-
-        try {
+        try (SearchCoordinator coordinator = createCoordinator(service, 0)) {
             String query = "neural \"cross entropy\"";
 
             coordinator.search(query).get(3, TimeUnit.SECONDS);
@@ -50,8 +46,6 @@ class SearchCoordinatorTest {
 
             assertFalse(coordinator.searchingProperty().get());
 
-        } finally {
-            coordinator.close();
         }
     }
 
@@ -63,9 +57,7 @@ class SearchCoordinatorTest {
                 result(1, "Java", 4.0)
         );
 
-        SearchCoordinator coordinator = createCoordinator(service, 0);
-
-        try {
+        try (SearchCoordinator coordinator = createCoordinator(service, 0)) {
             coordinator.search("java").get(3, TimeUnit.SECONDS);
 
             assertEquals(1, coordinator.results().size());
@@ -76,8 +68,6 @@ class SearchCoordinatorTest {
             assertTrue(coordinator.results().isEmpty());
             assertEquals(1, service.searchCount);
 
-        } finally {
-            coordinator.close();
         }
     }
 
@@ -85,9 +75,7 @@ class SearchCoordinatorTest {
     void debounceExecutesOnlyLatestPendingQuery() throws Exception {
         StubService service = new StubService();
 
-        SearchCoordinator coordinator = createCoordinator(service, 100);
-
-        try {
+        try (SearchCoordinator coordinator = createCoordinator(service, 100)) {
             coordinator.search("jav");
             coordinator.search("java");
 
@@ -99,32 +87,25 @@ class SearchCoordinatorTest {
                     service.executedQueries
             );
 
-        } finally {
-            coordinator.close();
         }
     }
 
     @Test
-    void exposesSearchFailure() throws Exception {
+    void exposesSearchFailure() {
         StubService service = new StubService();
 
         service.failure = new IllegalStateException(
                 "Search engine unavailable"
         );
 
-        SearchCoordinator coordinator = createCoordinator(service, 0);
-
-        try {
+        try (SearchCoordinator coordinator = createCoordinator(service, 0)) {
             try {
                 coordinator.search("java")
                         .get(3, TimeUnit.SECONDS);
             } catch (Exception ignored) {
             }
 
-            assertTrue(
-                    coordinator.errorProperty().get()
-                            instanceof IllegalStateException
-            );
+            assertInstanceOf(IllegalStateException.class, coordinator.errorProperty().get());
 
             assertEquals(
                     "Search engine unavailable",
@@ -133,8 +114,41 @@ class SearchCoordinatorTest {
 
             assertTrue(coordinator.results().isEmpty());
 
-        } finally {
-            coordinator.close();
+        }
+    }
+
+    @Test
+    void usesConfiguredResultLimit() throws Exception {
+        StubService service = new StubService();
+
+        try (SearchCoordinator coordinator = createCoordinator(service, 0)) {
+            coordinator.setResultLimit(100);
+
+            coordinator.search("java")
+                    .get(3, TimeUnit.SECONDS);
+
+            assertEquals(
+                    100,
+                    service.lastLimit
+            );
+
+            assertEquals(
+                    100,
+                    coordinator.resultLimit()
+            );
+
+        }
+    }
+    @Test
+    void rejectsInvalidResultLimit() {
+        StubService service = new StubService();
+
+        try (SearchCoordinator coordinator = createCoordinator(service, 0)) {
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> coordinator.setResultLimit(0)
+            );
+
         }
     }
 

@@ -34,7 +34,7 @@ public final class SearchCoordinator implements AutoCloseable {
     private final ScheduledExecutorService executor;
     private final Consumer<Runnable> uiExecutor;
     private final long debounceMillis;
-    private final int resultLimit;
+    private volatile int resultLimit;
 
     private final ObservableList<SearchResult> results = FXCollections.observableArrayList();
 
@@ -83,9 +83,7 @@ public final class SearchCoordinator implements AutoCloseable {
         return FXCollections.unmodifiableObservableList(results);
     }
 
-    public ReadOnlyStringProperty queryProperty() {
-        return query.getReadOnlyProperty();
-    }
+
 
     public ReadOnlyBooleanProperty searchingProperty() {
         return searching.getReadOnlyProperty();
@@ -152,16 +150,12 @@ public final class SearchCoordinator implements AutoCloseable {
     }
 
     private void executeSearch(String queryText, long currentGeneration, CompletableFuture<Void> completion) {
-
         try {
+            int currentResultLimit = resultLimit;
+
             List<SearchResult> searchResults = service.search(
                     new SearchQuery(queryText),
-                    resultLimit
-            );
-
-            System.out.println(
-                    "SEARCH QUERY: " + queryText +
-                            " RESULTS: " + searchResults.size()
+                    currentResultLimit
             );
 
             uiExecutor.accept(() -> {
@@ -192,7 +186,6 @@ public final class SearchCoordinator implements AutoCloseable {
             });
         }
     }
-
     private void cancelPendingSearch() {
         ScheduledFuture<?> scheduled = pendingSearch.getAndSet(null);
 
@@ -225,6 +218,18 @@ public final class SearchCoordinator implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
+    }
+
+    public int resultLimit() {
+        return resultLimit;
+    }
+
+    public void setResultLimit(int resultLimit) {
+        if (resultLimit <= 0) {
+            throw new IllegalArgumentException("Result limit must be positive");
+        }
+
+        this.resultLimit = resultLimit;
     }
 
 

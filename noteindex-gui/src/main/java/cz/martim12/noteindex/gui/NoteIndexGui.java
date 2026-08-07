@@ -8,6 +8,9 @@ import cz.martim12.noteindex.gui.importflow.ImportCoordinator;
 import cz.martim12.noteindex.gui.main.MainViewModel;
 import cz.martim12.noteindex.gui.main.MainWindow;
 import cz.martim12.noteindex.gui.search.SearchCoordinator;
+import cz.martim12.noteindex.gui.settings.GuiPreferences;
+import cz.martim12.noteindex.gui.settings.SettingsView;
+import cz.martim12.noteindex.gui.settings.ThemeManager;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -35,11 +38,16 @@ public final class NoteIndexGui extends Application {
 
     private ImportCoordinator importCoordinator;
     private SearchCoordinator searchCoordinator;
+
+    private GuiPreferences guiPreferences;
+    private ThemeManager themeManager;
     private MainViewModel mainViewModel;
     private MainWindow mainWindow;
 
     @Override
     public void init() {
+        guiPreferences = new GuiPreferences();
+
         applicationContext = new GuiApplicationContext(NoteIndexApplications::open);
     }
 
@@ -52,7 +60,15 @@ public final class NoteIndexGui extends Application {
         mainWindow.installShortcuts(scene);
 
         scene.getStylesheets().add(stylesheet("styles/base.css"));
-        scene.getStylesheets().add(stylesheet("styles/light.css"));
+
+        themeManager = new ThemeManager(
+                scene,
+                guiPreferences,
+                stylesheet("styles/light.css"),
+                stylesheet("styles/dark.css")
+        );
+
+        themeManager.start();
 
         primaryStage.setTitle("NoteIndex");
         primaryStage.setMinWidth(MINIMUM_WIDTH);
@@ -90,12 +106,29 @@ public final class NoteIndexGui extends Application {
                                                     importCoordinator = new ImportCoordinator(service);
                                                     searchCoordinator = new SearchCoordinator(service);
 
+                                                    searchCoordinator.setResultLimit(
+                                                            guiPreferences.searchResultLimit()
+                                                    );
+
+                                                    SettingsView settingsView = new SettingsView(
+                                                            guiPreferences,
+                                                            databaseFile,
+                                                            mainViewModel.totalDocumentCountProperty()
+                                                    );
+
                                                     mainWindow.connect(mainViewModel);
                                                     mainWindow.connectImport(importCoordinator);
                                                     mainWindow.connectSearch(searchCoordinator);
+                                                    mainWindow.connectSettings(settingsView);
+
+                                                    guiPreferences.searchResultLimitProperty().addListener(
+                                                            (observable, oldValue, newValue) ->
+                                                                    searchCoordinator.setResultLimit(
+                                                                            newValue.intValue()
+                                                                    )
+                                                    );
 
                                                     mainWindow.showReady(databaseFile);
-
                                                     mainViewModel.refresh();
 
                                                     return;
@@ -115,6 +148,10 @@ public final class NoteIndexGui extends Application {
 
     @Override
     public void stop() {
+        if (themeManager != null) {
+            themeManager.close();
+        }
+
         if (searchCoordinator != null) {
             searchCoordinator.close();
         }
@@ -180,6 +217,10 @@ public final class NoteIndexGui extends Application {
     }
 
     private static String displayMessage(Throwable failure) {
+        if (failure == null) {
+            return "Unknown error";
+        }
+
         Throwable current = failure;
 
         while (current != null) {
