@@ -203,5 +203,48 @@
 }
 
 .status-dot {
+    -fx-text-fill: #8a929e;
+}
+
+.startup-overlay {
+    -fx-background-color: rgba(246, 247, 249, 0.88);
+}
+
+.startup-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e1e4e9;
+    -fx-border-width: 1px;
+    -fx-effect:
+            dropshadow(
+                    gaussian,
+                    rgba(22, 28, 36, 0.12),
+                    28,
+                    0.12,
+                    0,
+                    8
+            );
+}
+
+.startup-title {
+    -fx-text-fill: #252a32;
+}
+
+.startup-description {
+    -fx-text-fill: #737b87;
+}
+
+.startup-card .progress-indicator {
+    -fx-progress-color: #6554e8;
+}
+
+.status-dot-ready {
     -fx-text-fill: #38a169;
+}
+
+.status-dot-loading {
+    -fx-text-fill: #6554e8;
+}
+
+.status-dot-error {
+    -fx-text-fill: #d64545;
 }

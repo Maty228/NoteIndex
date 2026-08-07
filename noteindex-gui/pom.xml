@@ -25,6 +25,12 @@
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>cz.martim12</groupId>
+            <artifactId>noteindex-application</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

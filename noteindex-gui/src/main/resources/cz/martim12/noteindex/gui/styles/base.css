@@ -196,3 +196,28 @@
 .status-dot {
     -fx-font-size: 9px;
 }
+
+.startup-overlay {
+    -fx-padding: 32px;
+}
+
+.startup-card {
+    -fx-max-width: 560px;
+    -fx-background-radius: 16px;
+    -fx-border-radius: 16px;
+}
+
+.startup-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+}
+
+.startup-description {
+    -fx-font-size: 12px;
+    -fx-line-spacing: 3px;
+}
+
+.startup-card .progress-indicator {
+    -fx-pref-width: 42px;
+    -fx-pref-height: 42px;
+}
