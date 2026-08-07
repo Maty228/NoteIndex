@@ -302,3 +302,60 @@
 .viewer-content .content {
     -fx-background-color: #ffffff;
 }
+
+.drop-overlay {
+    -fx-background-color: rgba(246, 247, 249, 0.91);
+}
+
+.drop-overlay-card {
+    -fx-background-color: rgba(255, 255, 255, 0.96);
+
+    -fx-effect:
+            dropshadow(
+                    gaussian,
+                    rgba(22, 28, 36, 0.14),
+                    32,
+                    0.10,
+                    0,
+                    8
+            );
+}
+
+.drop-overlay-accepted .drop-overlay-card {
+    -fx-border-color: #6554e8;
+}
+
+.drop-overlay-accepted .drop-overlay-symbol {
+    -fx-background-color: rgba(101, 84, 232, 0.13);
+    -fx-text-fill: #6554e8;
+}
+
+.drop-overlay-accepted .drop-overlay-title {
+    -fx-text-fill: #252a32;
+}
+
+.drop-overlay-accepted .drop-overlay-description {
+    -fx-text-fill: #747c88;
+}
+
+.drop-overlay-accepted .drop-overlay-formats {
+    -fx-text-fill: #6554e8;
+}
+
+.drop-overlay-rejected .drop-overlay-card {
+    -fx-border-color: #c95050;
+}
+
+.drop-overlay-rejected .drop-overlay-symbol {
+    -fx-background-color: rgba(201, 80, 80, 0.12);
+    -fx-text-fill: #c95050;
+}
+
+.drop-overlay-rejected .drop-overlay-title {
+    -fx-text-fill: #9f3535;
+}
+
+.drop-overlay-rejected .drop-overlay-description,
+.drop-overlay-rejected .drop-overlay-formats {
+    -fx-text-fill: #8a929e;
+}

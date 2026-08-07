@@ -6,6 +6,7 @@ import cz.martim12.noteindex.gui.library.DocumentListCell;
 import cz.martim12.noteindex.gui.viewer.DocumentViewer;
 import cz.martim12.noteindex.gui.importflow.ImportBatchResult;
 import cz.martim12.noteindex.gui.importflow.ImportProgressDialog;
+import cz.martim12.noteindex.gui.importflow.ImportFileSupport;
 
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
@@ -34,6 +35,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextAlignment;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
 
@@ -67,6 +71,16 @@ public final class MainWindow {
 
     private ImportCoordinator importCoordinator;
     private boolean importInProgress;
+
+    private final StackPane windowStack;
+    private final StackPane dropOverlay;
+
+    private Label dropOverlaySymbol;
+    private Label dropOverlayTitle;
+    private Label dropOverlayDescription;
+    private Label dropOverlayFormats;
+
+    private ImportFileSupport importFileSupport;
 
     private ToggleButton allNotesButton;
     private ToggleButton recentButton;
@@ -131,11 +145,18 @@ public final class MainWindow {
         root.setCenter(centerStack);
         root.setBottom(createStatusBar());
 
+        dropOverlay = createDropOverlay();
+
+        windowStack = new StackPane(root, dropOverlay);
+
+        configureDragAndDrop();
+
         hideStartupOverlay();
+        hideDropOverlay();
     }
 
     public Parent root(){
-        return root;
+        return windowStack;
     }
 
     /**
@@ -292,6 +313,161 @@ public final class MainWindow {
 
     public void connectImport(ImportCoordinator importCoordinator) {
         this.importCoordinator = importCoordinator;
+
+        importFileSupport = new ImportFileSupport(
+                importCoordinator.supportedExtensions()
+        );
+
+        dropOverlayFormats.setText(importFileSupport.supportedFormatsLabel());
+    }
+
+    private StackPane createDropOverlay() {
+        dropOverlaySymbol = new Label("+");
+        dropOverlaySymbol.getStyleClass().add("drop-overlay-symbol");
+
+        dropOverlayTitle = new Label("Drop notes to import");
+        dropOverlayTitle.getStyleClass().add("drop-overlay-title");
+
+        dropOverlayDescription = new Label("Release anywhere in this window");
+        dropOverlayDescription.getStyleClass().add("drop-overlay-description");
+
+        dropOverlayFormats = new Label("TXT · MD · MARKDOWN");
+        dropOverlayFormats.getStyleClass().add("drop-overlay-formats");
+
+        VBox card = new VBox(
+                12,
+                dropOverlaySymbol,
+                dropOverlayTitle,
+                dropOverlayDescription,
+                dropOverlayFormats
+        );
+
+        card.setAlignment(Pos.CENTER);
+        card.setMaxSize(520, 300);
+        card.setPadding(new Insets(42));
+
+        card.getStyleClass().add("drop-overlay-card");
+
+        StackPane overlay = new StackPane(card);
+
+        overlay.setAlignment(Pos.CENTER);
+        overlay.setMouseTransparent(true);
+
+        overlay.getStyleClass().addAll(
+                "drop-overlay",
+                "drop-overlay-accepted"
+        );
+
+        return overlay;
+    }
+
+    private void configureDragAndDrop() {
+        windowStack.setOnDragOver(this::handleDragOver);
+        windowStack.setOnDragDropped(this::handleDragDropped);
+
+        windowStack.setOnDragExited(event -> {
+            if (event.getTarget() == windowStack) {
+                hideDropOverlay();
+            }
+        });
+    }
+
+    private void handleDragOver(DragEvent event) {
+        Dragboard dragboard = event.getDragboard();
+
+        if (!dragboard.hasFiles()
+                || importCoordinator == null
+                || importFileSupport == null
+                || importInProgress) {
+
+            hideDropOverlay();
+            return;
+        }
+
+        List<Path> paths = dragboard.getFiles().stream()
+                .map(File::toPath)
+                .toList();
+
+        if (importFileSupport.containsSupportedFile(paths)) {
+            event.acceptTransferModes(TransferMode.COPY);
+            showAcceptedDropOverlay();
+        } else {
+            showRejectedDropOverlay();
+        }
+
+        event.consume();
+    }
+
+    private void handleDragDropped(DragEvent event) {
+        Dragboard dragboard = event.getDragboard();
+
+        boolean completed = false;
+
+        if (dragboard.hasFiles()
+                && importCoordinator != null
+                && importFileSupport != null
+                && !importInProgress) {
+
+            List<Path> paths = dragboard.getFiles().stream()
+                    .map(File::toPath)
+                    .toList();
+
+            if (importFileSupport.containsSupportedFile(paths)) {
+                List<Path> files = importFileSupport.regularFiles(paths);
+
+                if (!files.isEmpty()) {
+                    hideDropOverlay();
+                    importFiles(files);
+
+                    completed = true;
+                }
+            }
+        }
+
+        hideDropOverlay();
+
+        event.setDropCompleted(completed);
+        event.consume();
+    }
+
+    private void showAcceptedDropOverlay() {
+        dropOverlaySymbol.setText("+");
+        dropOverlayTitle.setText("Drop notes to import");
+        dropOverlayDescription.setText("Release anywhere in this window");
+
+        dropOverlay.getStyleClass().removeAll(
+                "drop-overlay-accepted",
+                "drop-overlay-rejected"
+        );
+
+        dropOverlay.getStyleClass().add("drop-overlay-accepted");
+
+        showDropOverlay();
+    }
+
+    private void showRejectedDropOverlay() {
+        dropOverlaySymbol.setText("×");
+        dropOverlayTitle.setText("Unsupported files");
+        dropOverlayDescription.setText("NoteIndex cannot import these files yet");
+
+        dropOverlay.getStyleClass().removeAll(
+                "drop-overlay-accepted",
+                "drop-overlay-rejected"
+        );
+
+        dropOverlay.getStyleClass().add("drop-overlay-rejected");
+
+        showDropOverlay();
+    }
+
+    private void showDropOverlay() {
+        dropOverlay.setVisible(true);
+        dropOverlay.setManaged(true);
+    }
+
+    private void hideDropOverlay() {
+        dropOverlay.setVisible(false);
+        dropOverlay.setManaged(false);
     }
 
     private void showOperationError(Throwable failure) {
@@ -490,7 +666,7 @@ public final class MainWindow {
 
         welcomeImportButton.getStyleClass().add("primary-button");
 
-        Label dropHint = new Label("You will also be able to drop files anywhere in this window.");
+        Label dropHint = new Label("Drop TXT or Markdown files anywhere in this window.");
 
         dropHint.setWrapText(true);
         dropHint.setTextAlignment(TextAlignment.CENTER);

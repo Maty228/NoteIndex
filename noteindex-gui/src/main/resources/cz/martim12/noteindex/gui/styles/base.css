@@ -284,3 +284,42 @@
     -fx-font-family: "Monospaced";
     -fx-font-size: 12px;
 }
+
+.drop-overlay {
+    -fx-padding: 28px;
+}
+
+.drop-overlay-card {
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-border-width: 2px;
+    -fx-border-style: dashed;
+}
+
+.drop-overlay-symbol {
+    -fx-min-width: 72px;
+    -fx-min-height: 72px;
+    -fx-pref-width: 72px;
+    -fx-pref-height: 72px;
+
+    -fx-alignment: center;
+
+    -fx-background-radius: 22px;
+
+    -fx-font-size: 38px;
+    -fx-font-weight: 400;
+}
+
+.drop-overlay-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+}
+
+.drop-overlay-description {
+    -fx-font-size: 13px;
+}
+
+.drop-overlay-formats {
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+}
