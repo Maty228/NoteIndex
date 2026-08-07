@@ -357,3 +357,10 @@
 .search-result-metadata {
     -fx-text-fill: #969da7;
 }
+
+.danger-button {
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-font-weight: 600;
+    -fx-padding: 7px 16px;
+}

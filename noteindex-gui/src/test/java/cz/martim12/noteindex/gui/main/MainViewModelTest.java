@@ -15,9 +15,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MainViewModelTest {
 
@@ -31,9 +29,7 @@ class MainViewModelTest {
                 summary(3, "Java", "text/markdown", "2026-08-04T10:00:00Z")
         );
 
-        MainViewModel viewModel = createViewModel(service);
-
-        try {
+        try (MainViewModel viewModel = createViewModel(service)) {
             viewModel.refresh().get(3, TimeUnit.SECONDS);
 
             assertEquals(3, viewModel.totalDocumentCountProperty().get());
@@ -63,8 +59,6 @@ class MainViewModelTest {
                             .toList()
             );
 
-        } finally {
-            viewModel.close();
         }
     }
 
@@ -84,9 +78,7 @@ class MainViewModelTest {
 
         service.document = Optional.of(document);
 
-        MainViewModel viewModel = createViewModel(service);
-
-        try {
+        try (MainViewModel viewModel = createViewModel(service)) {
             DocumentSummary summary = new DocumentSummary(
                     7,
                     "Java Memory",
@@ -103,35 +95,27 @@ class MainViewModelTest {
 
             assertEquals(7, service.requestedDocumentId);
 
-        } finally {
-            viewModel.close();
         }
     }
 
     @Test
-    void exposesLibraryFailure() throws Exception {
+    void exposesLibraryFailure() {
         StubService service = new StubService();
         service.listFailure = new IllegalStateException("Could not load documents");
 
-        MainViewModel viewModel = createViewModel(service);
-
-        try {
+        try (MainViewModel viewModel = createViewModel(service)) {
             try {
                 viewModel.refresh().get(3, TimeUnit.SECONDS);
             } catch (Exception ignored) {
             }
 
-            assertTrue(
-                    viewModel.errorProperty().get() instanceof IllegalStateException
-            );
+            assertInstanceOf(IllegalStateException.class, viewModel.errorProperty().get());
 
             assertEquals(
                     "Could not load documents",
                     viewModel.errorProperty().get().getMessage()
             );
 
-        } finally {
-            viewModel.close();
         }
     }
 
@@ -161,6 +145,8 @@ class MainViewModelTest {
 
         private List<DocumentSummary> summaries = List.of();
         private Optional<Document> document = Optional.empty();
+
+        private long deletedDocumentId;
 
         private RuntimeException listFailure;
         private long requestedDocumentId;
@@ -192,7 +178,9 @@ class MainViewModelTest {
 
         @Override
         public boolean deleteDocument(long documentId) {
-            throw new AssertionError("Delete must not be called");
+            deletedDocumentId = documentId;
+            boolean deleteResult = true;
+            return deleteResult;
         }
 
         @Override
@@ -202,6 +190,48 @@ class MainViewModelTest {
 
         @Override
         public void close() {
+        }
+    }
+
+    @Test
+    void deletesSelectedDocumentAndClearsSelection() throws Exception {
+        StubService service = new StubService();
+
+        Document document = new Document(
+                7,
+                "Java Memory",
+                "file:///notes/java.md",
+                "text/markdown",
+                "# Java Memory",
+                "Java Memory",
+                Instant.parse("2026-08-07T12:00:00Z")
+        );
+
+        service.document = Optional.of(document);
+
+        try (MainViewModel viewModel = createViewModel(service)) {
+            DocumentSummary summary = new DocumentSummary(
+                    7,
+                    "Java Memory",
+                    "text/markdown",
+                    document.importedAt()
+            );
+
+            viewModel.selectDocument(summary).get(3, TimeUnit.SECONDS);
+
+            assertSame(
+                    document,
+                    viewModel.selectedDocumentProperty().get()
+            );
+
+            boolean deleted = viewModel.deleteDocument(7)
+                    .get(3, TimeUnit.SECONDS);
+
+            assertTrue(deleted);
+            assertEquals(7, service.deletedDocumentId);
+
+            assertNull(viewModel.selectedDocumentProperty().get());
+
         }
     }
 }

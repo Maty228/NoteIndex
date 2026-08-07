@@ -42,13 +42,16 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.application.Platform;
-import javafx.stage.FileChooser;
-import javafx.collections.ListChangeListener;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.geometry.Side;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -80,6 +83,8 @@ public final class MainWindow {
 
     private ImportCoordinator importCoordinator;
     private boolean importInProgress;
+    private boolean deleteInProgress;
+
 
     private final StackPane windowStack;
     private final StackPane dropOverlay;
@@ -102,6 +107,7 @@ public final class MainWindow {
     private StackPane documentListsStack;
     private SearchCoordinator searchCoordinator;
     private boolean searchMode;
+
 
     private ComboBox<MainViewModel.DocumentSort> sortBox;
     private ListView<DocumentSummary> documentList;
@@ -166,6 +172,7 @@ public final class MainWindow {
         windowStack = new StackPane(root, dropOverlay);
 
         configureDragAndDrop();
+        configureDeletionActions();
 
         hideStartupOverlay();
         hideDropOverlay();
@@ -312,7 +319,8 @@ public final class MainWindow {
         );
 
         documentList.getItems().addListener((ListChangeListener<DocumentSummary>) change -> {
-            if (!documentList.getItems().isEmpty()
+            if (!searchMode
+                    && !documentList.getItems().isEmpty()
                     && documentList.getSelectionModel().getSelectedItem() == null) {
 
                 documentList.getSelectionModel().selectFirst();
@@ -724,6 +732,7 @@ public final class MainWindow {
 
 
         Button moreButton = createIconButton("•••", "More actions");
+        moreButton.setOnAction(event -> showDocumentActions(moreButton));
 
         HBox toolbar = new HBox(
                 12, sidebarButton, brand, searchField, toolbarImportButton, moreButton
@@ -1077,6 +1086,172 @@ public final class MainWindow {
         return spacing;
     }
 
+    private void showDocumentActions(Button owner) {
+        DocumentSummary selected = selectedDocumentSummary();
+
+        MenuItem deleteItem = new MenuItem("Delete selected note");
+
+        deleteItem.setDisable(selected == null || deleteInProgress);
+
+        deleteItem.setOnAction(event ->
+                requestDeleteDocument(selectedDocumentSummary())
+        );
+
+        ContextMenu menu = new ContextMenu(deleteItem);
+
+        menu.show(owner, Side.BOTTOM, 0, 4);
+    }
+
+    private DocumentSummary selectedDocumentSummary() {
+        if (searchMode) {
+            SearchResult result = searchResultList.getSelectionModel().getSelectedItem();
+
+            return result == null ? null : result.document();
+        }
+
+        return documentList.getSelectionModel().getSelectedItem();
+    }
+
+    private void requestDeleteDocument(DocumentSummary document) {
+        if (document == null || deleteInProgress) {
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+
+        alert.setTitle("Delete note");
+        alert.setHeaderText("Delete \"" + document.title() + "\"?");
+
+        alert.setContentText(
+                "This removes the note from NoteIndex. "
+                        + "The original file will not be deleted."
+        );
+
+        if (root.getScene() != null) {
+            alert.initOwner(root.getScene().getWindow());
+        }
+
+        ButtonType deleteButtonType = new ButtonType(
+                "Delete",
+                ButtonBar.ButtonData.OK_DONE
+        );
+
+        alert.getButtonTypes().setAll(
+                deleteButtonType,
+                ButtonType.CANCEL
+        );
+
+        Button deleteButton = (Button) alert.getDialogPane()
+                .lookupButton(deleteButtonType);
+
+        deleteButton.getStyleClass().add("danger-button");
+
+        ButtonType result = alert.showAndWait().orElse(ButtonType.CANCEL);
+
+        if (result == deleteButtonType) {
+            deleteDocument(document);
+        }
+    }
+
+    private void deleteDocument(DocumentSummary document) {
+        if (deleteInProgress) {
+            return;
+        }
+
+        deleteInProgress = true;
+
+        int previousLibraryIndex = documentList.getSelectionModel().getSelectedIndex();
+        int previousSearchIndex = searchResultList.getSelectionModel().getSelectedIndex();
+
+        documentList.setDisable(true);
+        searchResultList.setDisable(true);
+
+        setStatus("Deleting note...", "status-dot-loading");
+
+        viewModel.deleteDocument(document.id())
+                .thenCompose(deleted ->
+                        viewModel.refresh()
+                                .thenApply(ignored -> deleted)
+                )
+                .whenComplete((deleted, failure) ->
+                        Platform.runLater(() -> {
+                            deleteInProgress = false;
+
+                            documentList.setDisable(false);
+                            searchResultList.setDisable(false);
+
+                            if (failure != null) {
+                                setStatus("Delete failed", "status-dot-error");
+                                return;
+                            }
+
+                            if (!deleted) {
+                                setStatus("Note no longer exists", "status-dot-error");
+                                return;
+                            }
+
+                            if (searchMode
+                                    && searchCoordinator != null
+                                    && !searchField.getText().isBlank()) {
+
+                                refreshSearchAfterDeletion(previousSearchIndex);
+                                return;
+                            }
+
+                            selectNearestLibraryDocument(previousLibraryIndex);
+
+                            setStatus(
+                                    "Note removed from NoteIndex",
+                                    "status-dot-ready"
+                            );
+                        })
+                );
+    }
+
+    private void refreshSearchAfterDeletion(int previousIndex) {
+        String currentQuery = searchField.getText();
+
+        searchCoordinator.search(currentQuery)
+                .whenComplete((ignored, failure) ->
+                        Platform.runLater(() -> {
+                            if (failure != null) {
+                                return;
+                            }
+
+                            selectNearestSearchResult(previousIndex);
+
+                            setStatus(
+                                    "Note removed from NoteIndex",
+                                    "status-dot-ready"
+                            );
+                        })
+                );
+    }
+
+    private void selectNearestLibraryDocument(int previousIndex) {
+        if (documentList.getItems().isEmpty()) {
+            viewModel.selectDocument(null);
+            return;
+        }
+
+        int index = Math.max(previousIndex, 0);
+        index = Math.min(index, documentList.getItems().size() - 1);
+
+        documentList.getSelectionModel().select(index);
+    }
+
+    private void selectNearestSearchResult(int previousIndex) {
+        if (searchResultList.getItems().isEmpty()) {
+            viewModel.selectDocument(null);
+            return;
+        }
+
+        int index = Math.max(previousIndex, 0);
+        index = Math.min(index, searchResultList.getItems().size() - 1);
+
+        searchResultList.getSelectionModel().select(index);
+    }
+
     private void toggleSidebar() {
         if (sidebarVisible) {
             workspace.getItems().remove(sidebar);
@@ -1301,6 +1476,79 @@ public final class MainWindow {
             searchField.requestFocus();
             searchField.selectAll();
         });
+    }
+
+    private void configureDeletionActions() {
+        MenuItem deleteDocumentItem = new MenuItem("Delete from NoteIndex");
+
+        deleteDocumentItem.setOnAction(event ->
+                requestDeleteDocument(
+                        documentList.getSelectionModel().getSelectedItem()
+                )
+        );
+
+        ContextMenu documentMenu = new ContextMenu(deleteDocumentItem);
+
+        documentMenu.setOnShowing(event ->
+                deleteDocumentItem.setDisable(
+                        deleteInProgress
+                                || documentList.getSelectionModel().getSelectedItem() == null
+                )
+        );
+
+        documentList.setContextMenu(documentMenu);
+
+        MenuItem deleteSearchResultItem = new MenuItem("Delete from NoteIndex");
+
+        deleteSearchResultItem.setOnAction(event -> {
+            SearchResult result = searchResultList.getSelectionModel().getSelectedItem();
+
+            if (result != null) {
+                requestDeleteDocument(result.document());
+            }
+        });
+
+        ContextMenu searchMenu = new ContextMenu(deleteSearchResultItem);
+
+        searchMenu.setOnShowing(event ->
+                deleteSearchResultItem.setDisable(
+                        deleteInProgress
+                                || searchResultList.getSelectionModel().getSelectedItem() == null
+                )
+        );
+
+        searchResultList.setContextMenu(searchMenu);
+
+        documentList.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (!isDeleteKey(event)) {
+                return;
+            }
+
+            DocumentSummary selected = documentList.getSelectionModel().getSelectedItem();
+
+            if (selected != null) {
+                requestDeleteDocument(selected);
+                event.consume();
+            }
+        });
+
+        searchResultList.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (!isDeleteKey(event)) {
+                return;
+            }
+
+            SearchResult selected = searchResultList.getSelectionModel().getSelectedItem();
+
+            if (selected != null) {
+                requestDeleteDocument(selected.document());
+                event.consume();
+            }
+        });
+    }
+
+    private static boolean isDeleteKey(KeyEvent event) {
+        return event.getCode() == KeyCode.DELETE
+                || event.getCode() == KeyCode.BACK_SPACE;
     }
 
     private static Throwable unwrapFailure(Throwable failure) {

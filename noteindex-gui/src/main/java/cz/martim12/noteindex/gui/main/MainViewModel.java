@@ -178,6 +178,51 @@ public final class MainViewModel implements AutoCloseable {
         return result;
     }
 
+    public CompletableFuture<Boolean> deleteDocument(long documentId) {
+        ensureOpen();
+
+        if (documentId <= 0) {
+            throw new IllegalArgumentException("Document ID must be positive");
+        }
+
+        /*
+         * Any document load already running must no longer be allowed
+         * to select the document after it has been deleted.
+         */
+        selectionGeneration.incrementAndGet();
+
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+
+        CompletableFuture
+                .supplyAsync(() -> service.deleteDocument(documentId), executor)
+                .whenComplete((deleted, failure) ->
+                        uiExecutor.accept(() -> {
+                            if (closed.get()) {
+                                result.complete(false);
+                                return;
+                            }
+
+                            if (failure != null) {
+                                Throwable actualFailure = unwrap(failure);
+
+                                error.set(actualFailure);
+                                result.completeExceptionally(actualFailure);
+                                return;
+                            }
+
+                            Document selected = selectedDocument.get();
+
+                            if (deleted && selected != null && selected.id() == documentId) {
+                                selectedDocument.set(null);
+                            }
+
+                            result.complete(deleted);
+                        }));
+
+        return result;
+    }
+
+
     public void setLibraryView(LibraryView view) {
         ensureOpen();
 

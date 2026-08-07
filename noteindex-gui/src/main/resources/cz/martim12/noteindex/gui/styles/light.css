@@ -359,3 +359,16 @@
 .drop-overlay-rejected .drop-overlay-formats {
     -fx-text-fill: #8a929e;
 }
+
+.danger-button {
+    -fx-background-color: #d64545;
+    -fx-text-fill: #ffffff;
+}
+
+.danger-button:hover {
+    -fx-background-color: #c43d3d;
+}
+
+.danger-button:pressed {
+    -fx-background-color: #ad3535;
+}

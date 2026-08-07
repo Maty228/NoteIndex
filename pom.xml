@@ -15,6 +15,8 @@
     <module>noteindex-persistence</module>
     <module>noteindex-search</module>
     <module>noteindex-gui</module>
+    <module>noteindex-application</module>
+    <module>noteindex-cli</module>
   </modules>
 
   <properties>
