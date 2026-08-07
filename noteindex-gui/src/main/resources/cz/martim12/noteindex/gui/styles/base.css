@@ -1,0 +1,198 @@
+.app-root {
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+}
+
+.top-toolbar {
+    -fx-min-height: 58px;
+    -fx-pref-height: 58px;
+    -fx-padding: 10px 16px;
+    -fx-spacing: 12px;
+    -fx-alignment: center-left;
+}
+
+.brand-label {
+    -fx-font-size: 17px;
+    -fx-font-weight: 700;
+    -fx-padding: 0 10px 0 2px;
+}
+
+.global-search-field {
+    -fx-pref-height: 38px;
+    -fx-min-height: 38px;
+    -fx-max-width: 620px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 0 14px;
+    -fx-font-size: 13px;
+}
+
+.global-search-field:readonly {
+    -fx-opacity: 1;
+}
+
+.toolbar-icon-button {
+    -fx-min-width: 36px;
+    -fx-pref-width: 36px;
+    -fx-max-width: 36px;
+    -fx-min-height: 36px;
+    -fx-pref-height: 36px;
+    -fx-max-height: 36px;
+    -fx-background-radius: 9px;
+    -fx-border-radius: 9px;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.import-button {
+    -fx-min-width: 38px;
+    -fx-pref-width: 38px;
+    -fx-max-width: 38px;
+    -fx-min-height: 38px;
+    -fx-pref-height: 38px;
+    -fx-max-height: 38px;
+    -fx-background-radius: 11px;
+    -fx-border-radius: 11px;
+    -fx-padding: -2px 0 0 0;
+    -fx-font-size: 24px;
+    -fx-font-weight: 500;
+    -fx-cursor: hand;
+}
+
+.library-sidebar {
+    -fx-padding: 18px 12px 14px 12px;
+    -fx-spacing: 6px;
+}
+
+.sidebar-section-heading {
+    -fx-padding: 8px 10px 5px 10px;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+}
+
+.sidebar-navigation-button,
+.sidebar-action-button {
+    -fx-min-height: 36px;
+    -fx-pref-height: 36px;
+    -fx-alignment: center-left;
+    -fx-padding: 0 12px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.pane-heading {
+    -fx-min-height: 52px;
+    -fx-pref-height: 52px;
+    -fx-padding: 0 18px;
+    -fx-alignment: center-left;
+}
+
+.pane-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+}
+
+.pane-metadata {
+    -fx-font-size: 12px;
+}
+
+.document-list-pane {
+    -fx-min-width: 260px;
+}
+
+.document-list {
+    -fx-padding: 8px;
+}
+
+.document-list .list-cell {
+    -fx-min-height: 62px;
+    -fx-pref-height: 62px;
+    -fx-background-radius: 9px;
+    -fx-border-radius: 9px;
+    -fx-padding: 10px 12px;
+}
+
+.main-split-pane {
+    -fx-padding: 0;
+}
+
+.main-split-pane > .split-pane-divider {
+    -fx-padding: 0 0.5px;
+}
+
+.welcome-state {
+    -fx-alignment: center;
+}
+
+.welcome-plus {
+    -fx-min-width: 68px;
+    -fx-pref-width: 68px;
+    -fx-max-width: 68px;
+    -fx-min-height: 68px;
+    -fx-pref-height: 68px;
+    -fx-max-height: 68px;
+    -fx-alignment: center;
+    -fx-background-radius: 22px;
+    -fx-font-size: 36px;
+    -fx-font-weight: 400;
+}
+
+.welcome-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: 700;
+    -fx-padding: 7px 0 0 0;
+}
+
+.welcome-description {
+    -fx-font-size: 14px;
+    -fx-line-spacing: 3px;
+}
+
+.primary-button {
+    -fx-min-height: 40px;
+    -fx-pref-height: 40px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-padding: 0 22px;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+}
+
+.welcome-hint {
+    -fx-padding: 6px 0 0 0;
+    -fx-font-size: 12px;
+}
+
+.supported-formats {
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-padding: 2px 0 0 0;
+}
+
+.list-placeholder-symbol {
+    -fx-font-size: 28px;
+}
+
+.list-placeholder-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+}
+
+.list-placeholder-description {
+    -fx-font-size: 12px;
+}
+
+.status-bar {
+    -fx-min-height: 28px;
+    -fx-pref-height: 28px;
+    -fx-padding: 0 14px;
+}
+
+.status-text {
+    -fx-font-size: 11px;
+}
+
+.status-dot {
+    -fx-font-size: 9px;
+}

@@ -1,0 +1,207 @@
+.app-root {
+    -fx-background-color: #f6f7f9;
+}
+
+.app-root .label {
+    -fx-text-fill: #1e2229;
+}
+
+.top-toolbar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #dde1e7 transparent;
+}
+
+.toolbar-icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #5f6875;
+}
+
+.toolbar-icon-button:hover {
+    -fx-background-color: #eef0f4;
+    -fx-text-fill: #252a32;
+}
+
+.toolbar-icon-button:pressed {
+    -fx-background-color: #e4e7ec;
+}
+
+.global-search-field {
+    -fx-background-color: #f1f3f6;
+    -fx-border-color: #e1e4e9;
+    -fx-text-fill: #1e2229;
+    -fx-prompt-text-fill: #858d99;
+    -fx-highlight-fill: #6554e8;
+    -fx-highlight-text-fill: #ffffff;
+}
+
+.global-search-field:focused {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #6554e8;
+}
+
+.import-button {
+    -fx-background-color: #6554e8;
+    -fx-text-fill: #ffffff;
+    -fx-effect:
+            dropshadow(
+                    gaussian,
+                    rgba(81, 66, 200, 0.28),
+                    14,
+                    0.12,
+                    0,
+                    4
+            );
+}
+
+.import-button:hover {
+    -fx-background-color: #7465ee;
+}
+
+.import-button:pressed {
+    -fx-background-color: #5142c8;
+    -fx-effect: none;
+}
+
+.library-sidebar {
+    -fx-background-color: #f1f3f6;
+    -fx-border-color: transparent #dde1e7 transparent transparent;
+}
+
+.sidebar-section-heading {
+    -fx-text-fill: #8a929e;
+}
+
+.sidebar-navigation-button,
+.sidebar-action-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #59616d;
+}
+
+.sidebar-navigation-button:hover,
+.sidebar-action-button:hover {
+    -fx-background-color: #e7e9ee;
+    -fx-text-fill: #252a32;
+}
+
+.sidebar-navigation-button:selected {
+    -fx-background-color: rgba(101, 84, 232, 0.13);
+    -fx-text-fill: #5142c8;
+    -fx-font-weight: 600;
+}
+
+.library-sidebar .separator .line {
+    -fx-border-color: #daddE4;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.document-list-pane,
+.document-viewer-pane {
+    -fx-background-color: #ffffff;
+}
+
+.document-list-pane {
+    -fx-border-color: transparent #dde1e7 transparent transparent;
+}
+
+.pane-heading {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #eceef2 transparent;
+}
+
+.pane-title {
+    -fx-text-fill: #242931;
+}
+
+.pane-metadata {
+    -fx-text-fill: #8a929e;
+}
+
+.main-split-pane {
+    -fx-background-color: #ffffff;
+}
+
+.main-split-pane > .split-pane-divider {
+    -fx-background-color: #dde1e7;
+}
+
+.document-list {
+    -fx-background-color: #ffffff;
+    -fx-control-inner-background: #ffffff;
+    -fx-border-color: transparent;
+}
+
+.document-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #252a32;
+}
+
+.document-list .list-cell:hover {
+    -fx-background-color: #f5f6f8;
+}
+
+.document-list .list-cell:selected {
+    -fx-background-color: rgba(101, 84, 232, 0.12);
+    -fx-text-fill: #24203d;
+}
+
+.welcome-plus {
+    -fx-background-color: rgba(101, 84, 232, 0.12);
+    -fx-text-fill: #6554e8;
+    -fx-border-color: rgba(101, 84, 232, 0.18);
+    -fx-border-width: 1px;
+    -fx-border-radius: 22px;
+}
+
+.welcome-title {
+    -fx-text-fill: #20242b;
+}
+
+.welcome-description {
+    -fx-text-fill: #6c7480;
+}
+
+.primary-button {
+    -fx-background-color: #6554e8;
+    -fx-text-fill: #ffffff;
+}
+
+.primary-button:hover {
+    -fx-background-color: #7465ee;
+}
+
+.primary-button:pressed {
+    -fx-background-color: #5142c8;
+}
+
+.welcome-hint {
+    -fx-text-fill: #8a929e;
+}
+
+.supported-formats {
+    -fx-text-fill: #9aa1ab;
+}
+
+.list-placeholder-symbol {
+    -fx-text-fill: #b4bac3;
+}
+
+.list-placeholder-title {
+    -fx-text-fill: #5f6773;
+}
+
+.list-placeholder-description {
+    -fx-text-fill: #9299a3;
+}
+
+.status-bar {
+    -fx-background-color: #fafbfc;
+    -fx-border-color: #dde1e7 transparent transparent transparent;
+}
+
+.status-text {
+    -fx-text-fill: #7b838f;
+}
+
+.status-dot {
+    -fx-text-fill: #38a169;
+}
