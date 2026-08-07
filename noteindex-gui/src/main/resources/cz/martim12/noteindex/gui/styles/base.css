@@ -323,3 +323,37 @@
     -fx-font-size: 10px;
     -fx-font-weight: 700;
 }
+
+.search-result-list .list-cell {
+    -fx-padding: 11px 12px;
+}
+
+.search-result-content {
+    -fx-spacing: 5px;
+}
+
+.search-result-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.search-result-snippet {
+    -fx-font-size: 12px;
+    -fx-line-spacing: 2px;
+}
+
+.search-result-metadata {
+    -fx-font-size: 10px;
+}
+
+.search-result-title {
+    -fx-text-fill: #242931;
+}
+
+.search-result-snippet {
+    -fx-text-fill: #626b78;
+}
+
+.search-result-metadata {
+    -fx-text-fill: #969da7;
+}

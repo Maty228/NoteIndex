@@ -7,6 +7,9 @@ import cz.martim12.noteindex.gui.viewer.DocumentViewer;
 import cz.martim12.noteindex.gui.importflow.ImportBatchResult;
 import cz.martim12.noteindex.gui.importflow.ImportProgressDialog;
 import cz.martim12.noteindex.gui.importflow.ImportFileSupport;
+import cz.martim12.noteindex.core.model.SearchResult;
+import cz.martim12.noteindex.gui.search.SearchCoordinator;
+import cz.martim12.noteindex.gui.search.SearchResultCell;
 
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
@@ -40,6 +43,12 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
+import javafx.collections.ListChangeListener;
+import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -86,6 +95,13 @@ public final class MainWindow {
     private ToggleButton recentButton;
     private ToggleButton textNotesButton;
     private ToggleButton markdownNotesButton;
+
+    private TextField searchField;
+    private Label documentPaneTitle;
+    private ListView<SearchResult> searchResultList;
+    private StackPane documentListsStack;
+    private SearchCoordinator searchCoordinator;
+    private boolean searchMode;
 
     private ComboBox<MainViewModel.DocumentSort> sortBox;
     private ListView<DocumentSummary> documentList;
@@ -226,7 +242,19 @@ public final class MainWindow {
         documentList.setItems(viewModel.visibleDocuments());
 
         allNotesButton.setOnAction(event ->
-                viewModel.setLibraryView(MainViewModel.LibraryView.ALL)
+                activateLibraryView(MainViewModel.LibraryView.ALL)
+        );
+
+        recentButton.setOnAction(event ->
+                activateLibraryView(MainViewModel.LibraryView.RECENT)
+        );
+
+        textNotesButton.setOnAction(event ->
+                activateLibraryView(MainViewModel.LibraryView.TXT)
+        );
+
+        markdownNotesButton.setOnAction(event ->
+                activateLibraryView(MainViewModel.LibraryView.MARKDOWN)
         );
 
         recentButton.setOnAction(event ->
@@ -292,6 +320,14 @@ public final class MainWindow {
         });
 
         updateDocumentCount(viewModel.totalDocumentCountProperty().get());
+    }
+
+    private void activateLibraryView(MainViewModel.LibraryView libraryView) {
+        if (searchField != null && !searchField.getText().isBlank()) {
+            searchField.clear();
+        }
+
+        viewModel.setLibraryView(libraryView);
     }
 
     private void updateDocumentCount(int count) {
@@ -470,6 +506,182 @@ public final class MainWindow {
         dropOverlay.setManaged(false);
     }
 
+    public void connectSearch(SearchCoordinator searchCoordinator) {
+        this.searchCoordinator = searchCoordinator;
+
+        searchResultList.setItems(searchCoordinator.results());
+
+        searchField.setEditable(true);
+        searchField.setFocusTraversable(true);
+
+        searchField.setTooltip(
+                new Tooltip("Search notes · ⌘K on macOS, Ctrl+K elsewhere")
+        );
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.isBlank()) {
+                searchCoordinator.clear();
+                showLibraryMode();
+                return;
+            }
+
+            showSearchMode();
+            searchCoordinator.search(newValue);
+        });
+
+        searchField.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE && !searchField.getText().isEmpty()) {
+                searchField.clear();
+                event.consume();
+            }
+        });
+
+        searchResultList.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> {
+                    if (newValue != null) {
+                        viewModel.selectDocument(newValue.document());
+                    }
+                }
+        );
+
+        searchCoordinator.results().addListener(
+                (ListChangeListener<SearchResult>) change -> handleSearchResultsChanged()
+        );
+
+        searchCoordinator.searchingProperty().addListener(
+                (observable, oldValue, searching) -> {
+                    if (!searchMode) {
+                        return;
+                    }
+
+                    if (searching) {
+                        documentCountLabel.setText("Searching...");
+                        setStatus("Searching...", "status-dot-loading");
+                        return;
+                    }
+
+                    if (searchCoordinator.errorProperty().get() == null) {
+                        updateSearchResultCount();
+
+                        setStatus(
+                                searchResultList.getItems().size() + " search results",
+                                "status-dot-ready"
+                        );
+                    }
+                }
+        );
+
+        searchCoordinator.errorProperty().addListener(
+                (observable, oldValue, failure) -> {
+                    if (failure == null) {
+                        return;
+                    }
+
+                    setStatus("Search failed", "status-dot-error");
+                    showOperationError(failure);
+                }
+        );
+    }
+
+    private void showSearchMode() {
+        if (searchMode) {
+            documentCountLabel.setText("Searching...");
+            return;
+        }
+
+        searchMode = true;
+
+        documentPaneTitle.setText("Search results");
+
+        documentList.setVisible(false);
+        documentList.setManaged(false);
+
+        searchResultList.setVisible(true);
+        searchResultList.setManaged(true);
+
+        sortBox.setDisable(true);
+
+        documentCountLabel.setText("Searching...");
+    }
+
+    private void showLibraryMode() {
+        if (!searchMode) {
+            return;
+        }
+
+        searchMode = false;
+
+        documentPaneTitle.setText("Documents");
+
+        searchResultList.setVisible(false);
+        searchResultList.setManaged(false);
+
+        documentList.setVisible(true);
+        documentList.setManaged(true);
+
+        sortBox.setDisable(false);
+
+        updateDocumentCount(
+                viewModel.totalDocumentCountProperty().get()
+        );
+
+        synchronizeLibrarySelection();
+
+        setStatus("Library ready", "status-dot-ready");
+    }
+
+    private void handleSearchResultsChanged() {
+        if (!searchMode) {
+            return;
+        }
+
+        updateSearchResultCount();
+
+        if (searchResultList.getItems().isEmpty()) {
+            viewModel.selectDocument(null);
+            return;
+        }
+
+        searchResultList.getSelectionModel().selectFirst();
+    }
+
+    private void updateSearchResultCount() {
+        int count = searchResultList.getItems().size();
+
+        if (count >= 50) {
+            documentCountLabel.setText("50+ results");
+            return;
+        }
+
+        documentCountLabel.setText(
+                count + (count == 1 ? " result" : " results")
+        );
+    }
+
+    private void synchronizeLibrarySelection() {
+        if (viewModel.selectedDocumentProperty().get() == null) {
+            if (!documentList.getItems().isEmpty()) {
+                documentList.getSelectionModel().selectFirst();
+            }
+
+            return;
+        }
+
+        long selectedId = viewModel.selectedDocumentProperty().get().id();
+
+        documentList.getItems().stream()
+                .filter(document -> document.id() == selectedId)
+                .findFirst()
+                .ifPresentOrElse(
+                        document -> documentList.getSelectionModel().select(document),
+                        () -> {
+                            if (!documentList.getItems().isEmpty()) {
+                                documentList.getSelectionModel().selectFirst();
+                            }
+                        }
+                );
+    }
+
     private void showOperationError(Throwable failure) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
 
@@ -493,9 +705,9 @@ public final class MainWindow {
         Label brand = new Label("NoteIndex");
         brand.getStyleClass().add("brand-label");
 
-        TextField searchField = new TextField();
-        searchField.setPromptText("Search your notes...");
+        searchField = new TextField();
 
+        searchField.setPromptText("Search your notes...");
         searchField.setEditable(false);
         searchField.setFocusTraversable(false);
 
@@ -572,8 +784,8 @@ public final class MainWindow {
     }
 
     private BorderPane createDocumentListPane() {
-        Label title = new Label("Documents");
-        title.getStyleClass().add("pane-title");
+        documentPaneTitle = new Label("Documents");
+        documentPaneTitle.getStyleClass().add("pane-title");
 
         documentCountLabel = new Label("0 notes");
         documentCountLabel.getStyleClass().add("pane-metadata");
@@ -609,27 +821,65 @@ public final class MainWindow {
         Region headingSpace = new Region();
         HBox.setHgrow(headingSpace, Priority.ALWAYS);
 
-        HBox heading = new HBox(8, title, headingSpace, documentCountLabel, sortBox);
+        HBox heading = new HBox(
+                8,
+                documentPaneTitle,
+                headingSpace,
+                documentCountLabel,
+                sortBox
+        );
 
         heading.setAlignment(Pos.CENTER_LEFT);
         heading.getStyleClass().add("pane-heading");
 
         documentList = new ListView<>();
         documentList.getStyleClass().add("document-list");
-
         documentList.setCellFactory(list -> new DocumentListCell());
         documentList.setPlaceholder(createListPlaceholder());
+
+        searchResultList = new ListView<>();
+        searchResultList.getStyleClass().addAll("document-list", "search-result-list");
+        searchResultList.setCellFactory(list -> new SearchResultCell());
+        searchResultList.setPlaceholder(createSearchPlaceholder());
+
+        searchResultList.setVisible(false);
+        searchResultList.setManaged(false);
+
+        documentListsStack = new StackPane(documentList, searchResultList);
 
         BorderPane pane = new BorderPane();
 
         pane.getStyleClass().add("document-list-pane");
         pane.setTop(heading);
-        pane.setCenter(documentList);
+        pane.setCenter(documentListsStack);
 
         pane.setMinWidth(280);
         pane.setPrefWidth(360);
 
         return pane;
+    }
+
+    private VBox createSearchPlaceholder() {
+        Label symbol = new Label("⌕");
+        symbol.getStyleClass().add("list-placeholder-symbol");
+
+        Label title = new Label("No matching notes");
+        title.getStyleClass().add("list-placeholder-title");
+
+        Label description = new Label(
+                "Try different words or a quoted phrase."
+        );
+
+        description.setWrapText(true);
+        description.setTextAlignment(TextAlignment.CENTER);
+        description.getStyleClass().add("list-placeholder-description");
+
+        VBox placeholder = new VBox(8, symbol, title, description);
+
+        placeholder.setAlignment(Pos.CENTER);
+        placeholder.setPadding(new Insets(24));
+
+        return placeholder;
     }
 
     private BorderPane createViewerPane() {
@@ -1035,6 +1285,22 @@ public final class MainWindow {
                 .ifPresent(document ->
                         documentList.getSelectionModel().select(document)
                 );
+    }
+
+    public void installShortcuts(Scene scene) {
+        KeyCodeCombination focusSearch = new KeyCodeCombination(
+                KeyCode.K,
+                KeyCombination.SHORTCUT_DOWN
+        );
+
+        scene.getAccelerators().put(focusSearch, () -> {
+            if (!searchField.isEditable()) {
+                return;
+            }
+
+            searchField.requestFocus();
+            searchField.selectAll();
+        });
     }
 
     private static Throwable unwrapFailure(Throwable failure) {

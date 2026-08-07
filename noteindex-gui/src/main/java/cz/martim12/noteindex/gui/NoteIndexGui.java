@@ -7,6 +7,8 @@ import cz.martim12.noteindex.gui.application.GuiLifecycleState;
 import cz.martim12.noteindex.gui.importflow.ImportCoordinator;
 import cz.martim12.noteindex.gui.main.MainViewModel;
 import cz.martim12.noteindex.gui.main.MainWindow;
+import cz.martim12.noteindex.gui.search.SearchCoordinator;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -32,6 +34,7 @@ public final class NoteIndexGui extends Application {
     private GuiApplicationContext applicationContext;
 
     private ImportCoordinator importCoordinator;
+    private SearchCoordinator searchCoordinator;
     private MainViewModel mainViewModel;
     private MainWindow mainWindow;
 
@@ -45,6 +48,8 @@ public final class NoteIndexGui extends Application {
         mainWindow = new MainWindow();
 
         Scene scene = new Scene(mainWindow.root(), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+
+        mainWindow.installShortcuts(scene);
 
         scene.getStylesheets().add(stylesheet("styles/base.css"));
         scene.getStylesheets().add(stylesheet("styles/light.css"));
@@ -83,9 +88,12 @@ public final class NoteIndexGui extends Application {
                                                 if (failure == null) {
                                                     mainViewModel = new MainViewModel(service);
                                                     importCoordinator = new ImportCoordinator(service);
+                                                    searchCoordinator = new SearchCoordinator(service);
 
                                                     mainWindow.connect(mainViewModel);
                                                     mainWindow.connectImport(importCoordinator);
+                                                    mainWindow.connectSearch(searchCoordinator);
+
                                                     mainWindow.showReady(databaseFile);
 
                                                     mainViewModel.refresh();
@@ -107,6 +115,10 @@ public final class NoteIndexGui extends Application {
 
     @Override
     public void stop() {
+        if (searchCoordinator != null) {
+            searchCoordinator.close();
+        }
+
         if (importCoordinator != null) {
             importCoordinator.close();
         }

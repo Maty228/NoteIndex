@@ -145,34 +145,36 @@ public final class MainViewModel implements AutoCloseable {
 
         CompletableFuture
                 .supplyAsync(() -> service.findDocument(summary.id()), executor)
-                .whenComplete((document, failure) -> {
-                    if (closed.get() || generation != selectionGeneration.get()) {
-                        result.complete(null);
-                        return;
-                    }
+                .whenComplete((document, failure) ->
+                        uiExecutor.accept(() -> {
 
-                    if (failure != null) {
-                        Throwable actualFailure = unwrap(failure);
-                        error.set(actualFailure);
-                        result.completeExceptionally(actualFailure);
-                        return;
-                    }
+                            if (closed.get() || generation != selectionGeneration.get()) {
+                                result.complete(null);
+                                return;
+                            }
 
-                    if (document.isEmpty()) {
-                        IllegalStateException exception = new IllegalStateException(
-                                "Document " + summary.id() + " no longer exists"
-                        );
+                            if (failure != null) {
+                                Throwable actualFailure = unwrap(failure);
+                                error.set(actualFailure);
+                                result.completeExceptionally(actualFailure);
+                                return;
+                            }
 
-                        error.set(exception);
-                        selectedDocument.set(null);
-                        result.completeExceptionally(exception);
-                        return;
-                    }
+                            if (document.isEmpty()) {
+                                IllegalStateException exception = new IllegalStateException(
+                                        "Document " + summary.id() + " no longer exists"
+                                );
 
-                    selectedDocument.set(document.orElseThrow());
-                    result.complete(null);
+                                error.set(exception);
+                                selectedDocument.set(null);
+                                result.completeExceptionally(exception);
+                                return;
+                            }
 
-                });
+                            selectedDocument.set(document.orElseThrow());
+                            result.complete(null);
+
+                        }));
         return result;
     }
 
