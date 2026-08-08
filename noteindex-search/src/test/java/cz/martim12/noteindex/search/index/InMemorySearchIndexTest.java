@@ -311,4 +311,83 @@ class InMemorySearchIndexTest {
                 index.fieldStatistics(FieldName.BODY)
         );
     }
+
+    @Test
+    void returnsTermsMatchingPrefixInLexicographicOrder() {
+        index.indexDocument(new IndexDocument(
+                1,
+                Map.of(
+                        FieldName.BODY,
+                        "neuron neural network neuroscience"
+                )
+        ));
+
+        assertEquals(
+                List.of(
+                        "neural",
+                        "neuron",
+                        "neuroscience"
+                ),
+                index.termsWithPrefix(
+                        "neur",
+                        FieldName.BODY
+                )
+        );
+    }
+
+    @Test
+    void prefixVocabularyRemainsSeparatedByField() {
+        index.indexDocument(new IndexDocument(
+                1,
+                Map.of(
+                        FieldName.TITLE,
+                        "Neural Models",
+                        FieldName.BODY,
+                        "Network architecture"
+                )
+        ));
+
+        assertEquals(
+                List.of("neural"),
+                index.termsWithPrefix(
+                        "neur",
+                        FieldName.TITLE
+                )
+        );
+
+        assertTrue(
+                index.termsWithPrefix(
+                        "neur",
+                        FieldName.BODY
+                ).isEmpty()
+        );
+    }
+
+    @Test
+    void removesTermsFromPrefixVocabularyWithDocument() {
+        index.indexDocument(new IndexDocument(
+                1,
+                Map.of(
+                        FieldName.BODY,
+                        "neural network"
+                )
+        ));
+
+        assertEquals(
+                List.of("neural"),
+                index.termsWithPrefix(
+                        "neur",
+                        FieldName.BODY
+                )
+        );
+
+        assertTrue(index.removeDocument(1));
+
+        assertTrue(
+                index.termsWithPrefix(
+                        "neur",
+                        FieldName.BODY
+                ).isEmpty()
+        );
+    }
 }

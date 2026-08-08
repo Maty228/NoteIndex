@@ -8,6 +8,7 @@ import cz.martim12.noteindex.search.index.SearchIndex;
 import cz.martim12.noteindex.search.index.SearchIndexes;
 import cz.martim12.noteindex.search.query.DefaultQueryParser;
 import cz.martim12.noteindex.search.query.QueryParser;
+import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,12 +23,14 @@ class DefaultCandidateRetrieverTest {
     private QueryParser parser;
     private CandidateRetriever retriever;
 
+    private SearchIndex index;
+
     @BeforeEach
     void setUp() {
-        TextAnalyzer analyzer = new UnicodeTextAnalyzer();
+        TextAnalyzer analyzer =
+                new UnicodeTextAnalyzer();
 
-        SearchIndex index =
-                SearchIndexes.inMemory(analyzer);
+        index = SearchIndexes.inMemory(analyzer);
 
         PhraseMatcher phraseMatcher =
                 new PositionalPhraseMatcher(index);
@@ -35,7 +38,10 @@ class DefaultCandidateRetrieverTest {
         retriever = new DefaultCandidateRetriever(
                 index,
                 phraseMatcher,
-                List.of(FieldName.TITLE, FieldName.BODY)
+                List.of(
+                        FieldName.TITLE,
+                        FieldName.BODY
+                )
         );
 
         parser = new DefaultQueryParser(analyzer);
@@ -133,6 +139,80 @@ class DefaultCandidateRetrieverTest {
                 List.of(1L, 2L),
                 retriever.retrieveCandidates(
                         parser.parse("java")
+                )
+        );
+    }
+
+    @Test
+    void retrievesStandaloneTermsByPrefixWhenEnabled() {
+        PhraseMatcher phraseMatcher =
+                new PositionalPhraseMatcher(index);
+
+        CandidateRetriever prefixRetriever =
+                new DefaultCandidateRetriever(
+                        index,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        assertEquals(
+                List.of(1L, 2L),
+                prefixRetriever.retrieveCandidates(
+                        parser.parse("jav")
+                )
+        );
+    }
+
+    @Test
+    void exactModeDoesNotRetrievePartialTerms() {
+        assertTrue(
+                retriever.retrieveCandidates(
+                        parser.parse("jav")
+                ).isEmpty()
+        );
+    }
+
+    @Test
+    void prefixModeCombinesDifferentMatchingVocabularyTerms() {
+        index.indexDocument(new IndexDocument(
+                4,
+                Map.of(
+                        FieldName.TITLE,
+                        "Neural Networks",
+                        FieldName.BODY,
+                        "Learning"
+                )
+        ));
+
+        index.indexDocument(new IndexDocument(
+                5,
+                Map.of(
+                        FieldName.TITLE,
+                        "Neuron Models",
+                        FieldName.BODY,
+                        "Biology"
+                )
+        ));
+
+        CandidateRetriever prefixRetriever =
+                new DefaultCandidateRetriever(
+                        index,
+                        new PositionalPhraseMatcher(index),
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        assertEquals(
+                List.of(4L, 5L),
+                prefixRetriever.retrieveCandidates(
+                        parser.parse("neur")
                 )
         );
     }

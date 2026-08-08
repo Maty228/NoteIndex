@@ -6,12 +6,10 @@ import cz.martim12.noteindex.search.index.FieldStatistics;
 import cz.martim12.noteindex.search.index.IndexReader;
 import cz.martim12.noteindex.search.index.Posting;
 import cz.martim12.noteindex.search.query.ParsedQuery;
+import cz.martim12.noteindex.search.query.QueryPhrase;
+import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Field-aware BM25 ranking strategy.
@@ -24,17 +22,60 @@ public final class Bm25RankingStrategy implements RankingStrategy {
     private final IndexReader indexReader;
     private final Bm25Parameters parameters;
     private final Map<FieldName, Double> fieldWeights;
+    private final StandaloneTermMatchMode standaloneTermMatchMode;
+
+    private static final double PREFIX_MATCH_WEIGHT = 0.85;
 
     public Bm25RankingStrategy(IndexReader indexReader, Map<FieldName, Double> fieldWeights) {
         this(
-                indexReader, fieldWeights, Bm25Parameters.DEFAULT
+                indexReader, fieldWeights, Bm25Parameters.DEFAULT, StandaloneTermMatchMode.EXACT
         );
     }
 
-    public Bm25RankingStrategy(IndexReader indexReader, Map<FieldName, Double> fieldWeights, Bm25Parameters parameters) {
-        this.indexReader = Objects.requireNonNull(indexReader, "Index reader must not be null");
-        this.parameters = Objects.requireNonNull(parameters, "BM25 parameters must not be null");
+    public Bm25RankingStrategy(
+            IndexReader indexReader,
+            Map<FieldName, Double> fieldWeights,
+            StandaloneTermMatchMode standaloneTermMatchMode
+    ) {
+        this(
+                indexReader,
+                fieldWeights,
+                Bm25Parameters.DEFAULT,
+                standaloneTermMatchMode
+        );
+    }
+
+    public Bm25RankingStrategy(
+            IndexReader indexReader, Map<FieldName, Double> fieldWeights, Bm25Parameters parameters, StandaloneTermMatchMode standaloneTermMatchMode) {
+        this.indexReader = Objects.requireNonNull(
+                indexReader,
+                "Index reader must not be null"
+        );
+
+        this.parameters = Objects.requireNonNull(
+                parameters,
+                "BM25 parameters must not be null"
+        );
+
         this.fieldWeights = copyFieldWeights(fieldWeights);
+
+        this.standaloneTermMatchMode = Objects.requireNonNull(
+                standaloneTermMatchMode,
+                "Standalone term match mode must not be null"
+        );
+    }
+
+    public Bm25RankingStrategy(
+            IndexReader indexReader,
+            Map<FieldName, Double> fieldWeights,
+            Bm25Parameters parameters
+    ) {
+        this(
+                indexReader,
+                fieldWeights,
+                parameters,
+                StandaloneTermMatchMode.EXACT
+        );
     }
 
     @Override
@@ -45,22 +86,141 @@ public final class Bm25RankingStrategy implements RankingStrategy {
             );
         }
 
-        Objects.requireNonNull(query, "Parsed query must not be null");
+        Objects.requireNonNull(
+                query,
+                "Parsed query must not be null"
+        );
 
-        DocumentStatistics documentStatistics = indexReader.documentStatistics(documentId)
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Document is not indexed: " + documentId)
-                );
+        DocumentStatistics documentStatistics =
+                indexReader.documentStatistics(documentId)
+                        .orElseThrow(
+                                () -> new IllegalArgumentException(
+                                        "Document is not indexed: "
+                                                + documentId
+                                )
+                        );
 
         double score = 0.0;
 
-        for (String term : query.allTerms()) {
+        /*
+         * Standalone terms follow the configured exact/prefix policy.
+         */
+        for (String term : query.terms()) {
+            for (
+                    Map.Entry<FieldName, Double> fieldEntry
+                    : fieldWeights.entrySet()
+            ) {
+                score += scoreStandaloneTermInField(
+                        documentId,
+                        documentStatistics,
+                        term,
+                        fieldEntry.getKey(),
+                        fieldEntry.getValue()
+                );
+            }
+        }
+
+        /*
+         * Terms belonging only to required phrases stay exact.
+         *
+         * Avoid scoring a term twice when it also appeared as a
+         * standalone query term.
+         */
+        for (String phraseTerm : phraseTerms(query)) {
+            if (query.terms().contains(phraseTerm)) {
+                continue;
+            }
+
             for (Map.Entry<FieldName, Double> fieldEntry : fieldWeights.entrySet()) {
-                score += scoreTermInField(documentId, documentStatistics, term, fieldEntry.getKey(), fieldEntry.getValue());
+                score += scoreTermInField(
+                        documentId,
+                        documentStatistics,
+                        phraseTerm,
+                        fieldEntry.getKey(),
+                        fieldEntry.getValue()
+                );
             }
         }
 
         return score;
+    }
+
+    private double scoreStandaloneTermInField(
+            long documentId,
+            DocumentStatistics documentStatistics,
+            String queryTerm,
+            FieldName field,
+            double fieldWeight
+    ) {
+        if (standaloneTermMatchMode
+                == StandaloneTermMatchMode.EXACT) {
+
+            return scoreTermInField(
+                    documentId,
+                    documentStatistics,
+                    queryTerm,
+                    field,
+                    fieldWeight
+            );
+        }
+
+        /*
+         * Prefer an exact token whenever this document contains it.
+         */
+        double exactScore = scoreTermInField(
+                documentId,
+                documentStatistics,
+                queryTerm,
+                field,
+                fieldWeight
+        );
+
+        if (exactScore > 0.0) {
+            return exactScore;
+        }
+
+        double bestPrefixScore = 0.0;
+
+        for (String indexedTerm :
+                indexReader.termsWithPrefix(
+                        queryTerm,
+                        field
+                )) {
+
+            if (indexedTerm.equals(queryTerm)) {
+                continue;
+            }
+
+            double prefixScore = scoreTermInField(
+                    documentId,
+                    documentStatistics,
+                    indexedTerm,
+                    field,
+                    fieldWeight
+            );
+
+            bestPrefixScore = Math.max(
+                    bestPrefixScore,
+                    prefixScore
+            );
+        }
+
+        return bestPrefixScore * PREFIX_MATCH_WEIGHT;
+    }
+
+    private static List<String> phraseTerms(
+            ParsedQuery query
+    ) {
+        LinkedHashSet<String> terms =
+                new LinkedHashSet<>();
+
+        for (QueryPhrase phrase :
+                query.requiredPhrases()) {
+
+            terms.addAll(phrase.terms());
+        }
+
+        return List.copyOf(terms);
     }
 
     private double scoreTermInField(long documentId, DocumentStatistics documentStatistics, String term, FieldName field, double fieldWeight) {

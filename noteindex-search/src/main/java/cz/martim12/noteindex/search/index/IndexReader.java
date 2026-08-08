@@ -16,6 +16,14 @@ public interface IndexReader {
     List<Posting> postings(String normalizedTerm, FieldName field);
 
     /**
+     * Returns normalized indexed terms in the selected field that
+     * begin with the supplied normalized prefix.
+     *
+     * The returned terms must be ordered lexicographically.
+     */
+    List<String> termsWithPrefix(String normalizedPrefix, FieldName field);
+
+    /**
      * Returns statistics for an indexed document.
      */
     Optional<DocumentStatistics> documentStatistics(long documentId);

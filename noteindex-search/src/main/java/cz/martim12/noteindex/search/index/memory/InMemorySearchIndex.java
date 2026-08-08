@@ -35,7 +35,8 @@ public final class InMemorySearchIndex implements SearchIndex{
      *      -> document ID
      *         -> posting
      */
-    private final Map<FieldName, Map<String, NavigableMap<Long, Posting>>> postingsByField = new HashMap<>();
+    private final Map<FieldName, NavigableMap<String, NavigableMap<Long, Posting>>> postingsByField =
+            new HashMap<>();
 
     private final Map<Long, DocumentStatistics> statisticsByDocument = new HashMap<>();
 
@@ -77,7 +78,7 @@ public final class InMemorySearchIndex implements SearchIndex{
         readLock.lock();
 
         try {
-            Map<String, NavigableMap<Long, Posting>> fieldPostings = postingsByField.get(field);
+            NavigableMap<String, NavigableMap<Long, Posting>> fieldPostings = postingsByField.get(field);
 
             if (fieldPostings == null) {
                 return List.of();
@@ -89,6 +90,47 @@ public final class InMemorySearchIndex implements SearchIndex{
                 return List.of();
             }
             return List.copyOf(termPostings.values());
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public List<String> termsWithPrefix(
+            String normalizedPrefix,
+            FieldName field
+    ) {
+        requireTerm(normalizedPrefix);
+        Objects.requireNonNull(
+                field,
+                "Field name must not be null"
+        );
+
+        readLock.lock();
+
+        try {
+            NavigableMap<String, NavigableMap<Long, Posting>> fieldPostings =
+                    postingsByField.get(field);
+
+            if (fieldPostings == null) {
+                return List.of();
+            }
+
+            List<String> matches = new ArrayList<>();
+
+            for (String term : fieldPostings
+                    .tailMap(normalizedPrefix, true)
+                    .keySet()) {
+
+                if (!term.startsWith(normalizedPrefix)) {
+                    break;
+                }
+
+                matches.add(term);
+            }
+
+            return List.copyOf(matches);
+
         } finally {
             readLock.unlock();
         }
@@ -261,8 +303,8 @@ public final class InMemorySearchIndex implements SearchIndex{
                     .computeIfAbsent(field, ignored -> new MutableFieldStatistics())
                     .addDocument(fieldLength);
 
-            Map<String, NavigableMap<Long, Posting>> fieldPostings =
-                    postingsByField.computeIfAbsent(field, ignored -> new HashMap<>());
+            NavigableMap<String, NavigableMap<Long, Posting>> fieldPostings =
+                    postingsByField.computeIfAbsent(field, ignored -> new TreeMap<>());
 
             for (
                     Map.Entry<String, List<Integer>> termEntry
@@ -286,8 +328,7 @@ public final class InMemorySearchIndex implements SearchIndex{
     }
 
     private void removeDocumentPostings(long documentId, FieldName field, Set<String> terms) {
-        Map<String, NavigableMap<Long, Posting>> fieldPostings = postingsByField.get(field);
-
+        NavigableMap<String, NavigableMap<Long, Posting>> fieldPostings = postingsByField.get(field);
         if (fieldPostings == null) {
             return;
         }

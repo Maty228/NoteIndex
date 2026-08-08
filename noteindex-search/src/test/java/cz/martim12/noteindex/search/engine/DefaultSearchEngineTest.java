@@ -13,6 +13,9 @@ import cz.martim12.noteindex.search.retrieval.CandidateRetriever;
 import cz.martim12.noteindex.search.retrieval.DefaultCandidateRetriever;
 import cz.martim12.noteindex.search.retrieval.PhraseMatcher;
 import cz.martim12.noteindex.search.retrieval.PositionalPhraseMatcher;
+import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
+import cz.martim12.noteindex.search.ranking.Bm25RankingStrategy;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -178,6 +181,242 @@ class DefaultSearchEngineTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> engine.search("java", 0)
+        );
+    }
+
+    @Test
+    void prefixSearchFindsPartialStandaloneTerm() {
+        index.indexDocument(
+                document(
+                        1,
+                        "Neural Networks",
+                        "Deep learning"
+                )
+        );
+
+        CandidateRetriever prefixRetriever =
+                new DefaultCandidateRetriever(
+                        index,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        RankingStrategy ranking =
+                new Bm25RankingStrategy(
+                        index,
+                        Map.of(
+                                FieldName.TITLE, 2.0,
+                                FieldName.BODY, 1.0
+                        ),
+                        cz.martim12.noteindex.search.ranking.Bm25Parameters.DEFAULT,
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        SearchEngine engine =
+                new DefaultSearchEngine(
+                        parser,
+                        prefixRetriever,
+                        ranking,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        2.0
+                );
+
+        List<SearchHit> hits =
+                engine.search("neur", 10);
+
+        assertEquals(1, hits.size());
+        assertEquals(
+                1,
+                hits.getFirst().documentId()
+        );
+
+        assertTrue(
+                hits.getFirst().lexicalScore() > 0.0
+        );
+    }
+
+    @Test
+    void exactSearchModeDoesNotFindPartialTerm() {
+        index.indexDocument(
+                document(
+                        1,
+                        "Neural Networks",
+                        "Deep learning"
+                )
+        );
+
+        CandidateRetriever exactRetriever =
+                new DefaultCandidateRetriever(
+                        index,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        StandaloneTermMatchMode.EXACT
+                );
+
+        RankingStrategy ranking =
+                new Bm25RankingStrategy(
+                        index,
+                        Map.of(
+                                FieldName.TITLE, 2.0,
+                                FieldName.BODY, 1.0
+                        ),
+                        StandaloneTermMatchMode.EXACT
+                );
+
+        SearchEngine engine =
+                new DefaultSearchEngine(
+                        parser,
+                        exactRetriever,
+                        ranking,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        2.0
+                );
+
+        assertTrue(
+                engine.search(
+                        "neur",
+                        10
+                ).isEmpty()
+        );
+    }
+
+    @Test
+    void prefixModeDoesNotChangeQuotedPhraseMatching() {
+        index.indexDocument(
+                document(
+                        1,
+                        "Neural Networks",
+                        "Virtual machines are useful"
+                )
+        );
+
+        CandidateRetriever prefixRetriever =
+                new DefaultCandidateRetriever(
+                        index,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        RankingStrategy ranking =
+                new Bm25RankingStrategy(
+                        index,
+                        Map.of(
+                                FieldName.TITLE, 2.0,
+                                FieldName.BODY, 1.0
+                        ),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        SearchEngine engine =
+                new DefaultSearchEngine(
+                        parser,
+                        prefixRetriever,
+                        ranking,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        2.0
+                );
+
+        assertTrue(
+                engine.search(
+                        "\"virtual mach\"",
+                        10
+                ).isEmpty()
+        );
+
+        assertEquals(
+                1,
+                engine.search(
+                        "\"virtual machines\"",
+                        10
+                ).size()
+        );
+    }
+
+    @Test
+    void prefixSearchFindsMultipleVocabularyExpansions() {
+        index.indexDocument(
+                document(
+                        1,
+                        "Neural Models",
+                        "Learning"
+                )
+        );
+
+        index.indexDocument(
+                document(
+                        2,
+                        "Neuron Models",
+                        "Biology"
+                )
+        );
+
+        CandidateRetriever prefixRetriever =
+                new DefaultCandidateRetriever(
+                        index,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        RankingStrategy ranking =
+                new Bm25RankingStrategy(
+                        index,
+                        Map.of(
+                                FieldName.TITLE, 2.0,
+                                FieldName.BODY, 1.0
+                        ),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        SearchEngine engine =
+                new DefaultSearchEngine(
+                        parser,
+                        prefixRetriever,
+                        ranking,
+                        phraseMatcher,
+                        List.of(
+                                FieldName.TITLE,
+                                FieldName.BODY
+                        ),
+                        2.0
+                );
+
+        assertEquals(
+                List.of(1L, 2L),
+                engine.search(
+                                "neur",
+                                10
+                        )
+                        .stream()
+                        .map(SearchHit::documentId)
+                        .sorted()
+                        .toList()
         );
     }
 

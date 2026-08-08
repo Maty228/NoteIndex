@@ -5,6 +5,7 @@ import cz.martim12.noteindex.search.index.IndexReader;
 import cz.martim12.noteindex.search.index.Posting;
 import cz.martim12.noteindex.search.query.ParsedQuery;
 import cz.martim12.noteindex.search.query.QueryPhrase;
+import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -31,7 +32,22 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
     private final PhraseMatcher phraseMatcher;
     private final List<FieldName> fields;
 
-    public DefaultCandidateRetriever(IndexReader indexReader, PhraseMatcher phraseMatcher, Collection<FieldName> fields) {
+    private final StandaloneTermMatchMode standaloneTermMatchMode;
+
+
+    public DefaultCandidateRetriever(
+            IndexReader indexReader,
+            PhraseMatcher phraseMatcher,
+            Collection<FieldName> fields
+    ) {
+        this(
+                indexReader,
+                phraseMatcher,
+                fields,
+                StandaloneTermMatchMode.EXACT
+        );
+    }
+    public DefaultCandidateRetriever(IndexReader indexReader, PhraseMatcher phraseMatcher, Collection<FieldName> fields, StandaloneTermMatchMode standaloneTermMatchMode) {
         this.indexReader = Objects.requireNonNull(
                 indexReader,
                 "Index reader must not be null"
@@ -43,6 +59,11 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
         );
 
         this.fields = copyFields(fields);
+
+        this.standaloneTermMatchMode = Objects.requireNonNull(
+                standaloneTermMatchMode,
+                "Standalone term match mode must not be null"
+        );
     }
 
     @Override
@@ -59,16 +80,35 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
     private List<Long> retrieveTermCandidates(ParsedQuery query) {
         NavigableSet<Long> candidates = new TreeSet<>();
 
-        for (String term : query.terms()) {
+        for (String queryTerm : query.terms()) {
             for (FieldName field : fields) {
-                indexReader.postings(term, field)
-                        .stream()
-                        .map(Posting::documentId)
-                        .forEach(candidates::add);
+                for (String indexedTerm :
+                        matchingTerms(queryTerm, field)) {
+
+                    indexReader.postings(indexedTerm, field)
+                            .stream()
+                            .map(Posting::documentId)
+                            .forEach(candidates::add);
+                }
             }
         }
 
         return List.copyOf(candidates);
+    }
+
+    private List<String> matchingTerms(
+            String queryTerm,
+            FieldName field
+    ) {
+        return switch (standaloneTermMatchMode) {
+            case EXACT -> List.of(queryTerm);
+
+            case PREFIX ->
+                    indexReader.termsWithPrefix(
+                            queryTerm,
+                            field
+                    );
+        };
     }
 
     private List<Long> retrieveRequiredPhraseCandidates(ParsedQuery query) {
