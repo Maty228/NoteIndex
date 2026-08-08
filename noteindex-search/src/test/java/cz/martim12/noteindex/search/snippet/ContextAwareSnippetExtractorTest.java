@@ -4,6 +4,7 @@ import cz.martim12.noteindex.search.analysis.UnicodeTextAnalyzer;
 import cz.martim12.noteindex.search.query.DefaultQueryParser;
 import cz.martim12.noteindex.search.query.ParsedQuery;
 import cz.martim12.noteindex.search.query.QueryParser;
+import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -177,5 +178,76 @@ class ContextAwareSnippetExtractorTest {
         );
 
         assertTrue(snippet.text().length() > 12);
+    }
+
+    @Test
+    void matchesCompleteTokenForStandalonePrefix() {
+        ContextAwareSnippetExtractor extractor =
+                new ContextAwareSnippetExtractor(
+                        new UnicodeTextAnalyzer(),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        ParsedQuery query =
+                new DefaultQueryParser(
+                        new UnicodeTextAnalyzer()
+                ).parse("objec");
+
+        String source =
+                "The heap stores dynamically allocated Java objects.";
+
+        Snippet snippet =
+                extractor.extract(
+                        source,
+                        query,
+                        80
+                );
+
+        assertEquals(
+                "objects",
+                source.substring(
+                        snippet.matches()
+                                .getFirst()
+                                .sourceStartOffset(),
+                        snippet.matches()
+                                .getFirst()
+                                .sourceEndOffset()
+                )
+        );
+    }
+
+    @Test
+    void keepsQuotedPhraseMatchingExact() {
+        ContextAwareSnippetExtractor extractor =
+                new ContextAwareSnippetExtractor(
+                        new UnicodeTextAnalyzer(),
+                        StandaloneTermMatchMode.PREFIX
+                );
+
+        ParsedQuery query =
+                new DefaultQueryParser(
+                        new UnicodeTextAnalyzer()
+                ).parse("\"virtual machine\"");
+
+        String source =
+                "The Java virtual machine executes bytecode.";
+
+        Snippet snippet =
+                extractor.extract(
+                        source,
+                        query,
+                        80
+                );
+
+        assertTrue(
+                snippet.matches()
+                        .stream()
+                        .anyMatch(match ->
+                                source.substring(
+                                        match.sourceStartOffset(),
+                                        match.sourceEndOffset()
+                                ).equals("virtual machine")
+                        )
+        );
     }
 }

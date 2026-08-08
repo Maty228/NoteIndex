@@ -122,7 +122,8 @@ public final class SearchRuntimes {
 
             SnippetExtractor snippetExtractor =
                     new ContextAwareSnippetExtractor(
-                            analyzer
+                            analyzer,
+                            standaloneTermMatchMode
                     );
 
             return new SearchRuntime(

@@ -16,6 +16,14 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+import cz.martim12.noteindex.core.model.HighlightRange;
+import cz.martim12.noteindex.gui.component.HighlightedTextFlow;
+
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.StackPane;
+
+import java.util.List;
+
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
@@ -33,7 +41,23 @@ public final class DocumentViewer {
     private final ToggleButton previewButton = new ToggleButton("Preview");
     private final ToggleButton sourceButton = new ToggleButton("Source");
 
-    private final TextArea content = new TextArea();
+    private final HighlightedTextFlow previewContent =
+            new HighlightedTextFlow();
+
+    private final ScrollPane previewScroll =
+            new ScrollPane(previewContent);
+
+    private final TextArea sourceContent =
+            new TextArea();
+
+    private final StackPane contentStack =
+            new StackPane(
+                    previewScroll,
+                    sourceContent
+            );
+
+    private List<HighlightRange> highlights =
+            List.of();
 
     private Document document;
 
@@ -71,12 +95,31 @@ public final class DocumentViewer {
         header.setPadding(new Insets(16, 20, 16, 20));
         header.getStyleClass().add("viewer-header");
 
-        content.setEditable(false);
-        content.setWrapText(true);
-        content.getStyleClass().add("viewer-content");
+        previewContent.getStyleClass().add(
+                "viewer-highlighted-content"
+        );
+
+        previewScroll.setFitToWidth(true);
+        previewScroll.setHbarPolicy(
+                ScrollPane.ScrollBarPolicy.NEVER
+        );
+        previewScroll.getStyleClass().add(
+                "viewer-preview-scroll"
+        );
+
+        sourceContent.setEditable(false);
+        sourceContent.setWrapText(true);
+
+        sourceContent.getStyleClass().addAll(
+                "viewer-content",
+                "viewer-source-content"
+        );
+
+        sourceContent.setVisible(false);
+        sourceContent.setManaged(false);
 
         root.setTop(header);
-        root.setCenter(content);
+        root.setCenter(contentStack);
 
         showEmpty();
     }
@@ -86,18 +129,51 @@ public final class DocumentViewer {
     }
 
     public void showDocument(Document document) {
+        showDocument(
+                document,
+                List.of()
+        );
+    }
+
+    public void showDocument(
+            Document document,
+            List<HighlightRange> highlights
+    ) {
         this.document = document;
+        this.highlights = List.copyOf(highlights);
 
         title.setText(document.title());
-        metadata.setText(formatLabel(document.format()) + " · Imported " + DATE_FORMATTER.format(document.importedAt()));
+
+        metadata.setText(
+                formatLabel(document.format())
+                        + " · Imported "
+                        + DATE_FORMATTER.format(
+                        document.importedAt()
+                )
+        );
 
         source.setText(document.sourceUri());
 
-        source.setTooltip(new Tooltip(document.sourceUri()));
+        source.setTooltip(
+                new Tooltip(document.sourceUri())
+        );
 
         previewButton.setSelected(true);
 
         renderContent();
+    }
+
+    public void clearHighlights() {
+        highlights = List.of();
+
+        if (document != null
+                && previewButton.isSelected()) {
+
+            previewContent.showText(
+                    document.searchableContent(),
+                    highlights
+            );
+        }
     }
 
     public void showEmpty() {
@@ -106,23 +182,52 @@ public final class DocumentViewer {
         title.setText("Document");
         metadata.setText("");
         source.setText("");
-        content.clear();
+        highlights = List.of();
+
+        previewContent.showText(
+                "",
+                highlights
+        );
+
+        sourceContent.clear();
     }
 
-    private void renderContent(){
+    private void renderContent() {
         if (document == null) {
-            content.clear();
+            previewContent.showText(
+                    "",
+                    List.of()
+            );
+
+            sourceContent.clear();
             return;
         }
 
-        boolean sourceMode = sourceButton.isSelected();
+        boolean sourceMode =
+                sourceButton.isSelected();
 
-        content.setText(sourceMode ? document.originalContent() : document.searchableContent());
+        previewScroll.setVisible(!sourceMode);
+        previewScroll.setManaged(!sourceMode);
 
-        content.getStyleClass().removeAll("viewer-preview-content", "viewer-source-content");
-        content.getStyleClass().add(sourceMode ? "viewer-source-content" : "viewer-preview-content");
+        sourceContent.setVisible(sourceMode);
+        sourceContent.setManaged(sourceMode);
 
-        content.positionCaret(0);
+        if (sourceMode) {
+            sourceContent.setText(
+                    document.originalContent()
+            );
+
+            sourceContent.positionCaret(0);
+
+            return;
+        }
+
+        previewContent.showText(
+                document.searchableContent(),
+                highlights
+        );
+
+        previewScroll.setVvalue(0);
     }
 
     private static String formatLabel(String format) {

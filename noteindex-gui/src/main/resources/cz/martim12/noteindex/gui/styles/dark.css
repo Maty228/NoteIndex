@@ -117,12 +117,16 @@
     -fx-text-fill: #e5e7eb;
 }
 
-.document-list .list-cell:hover {
+.document-list .list-cell:filled:hover {
     -fx-background-color: #252930;
 }
 
-.document-list .list-cell:selected {
+.document-list .list-cell:filled:selected {
     -fx-background-color: rgba(116, 101, 238, 0.20);
+}
+
+.document-list .list-cell:empty {
+    -fx-background-color: transparent;
 }
 
 .document-cell-title,
@@ -534,4 +538,29 @@
 .modal-text-field:focused {
     -fx-background-color: #252930;
     -fx-border-color: #7465ee;
+}
+
+.viewer-preview-scroll,
+.viewer-preview-scroll > .viewport,
+.viewer-highlighted-content {
+    -fx-background-color: #191c20;
+}
+
+.viewer-highlighted-content .highlighted-text {
+    -fx-fill: #e2e5ea;
+}
+
+.search-result-snippet .highlighted-text {
+    -fx-fill: #b3b8c2;
+}
+
+.search-highlight-background {
+    -fx-fill: rgba(126, 108, 255, 0.30);
+    -fx-stroke: rgba(160, 145, 255, 0.42);
+    -fx-stroke-width: 0.6px;
+}
+
+.highlighted-text-match {
+    -fx-fill: #d7d0ff;
+    -fx-font-weight: 700;
 }

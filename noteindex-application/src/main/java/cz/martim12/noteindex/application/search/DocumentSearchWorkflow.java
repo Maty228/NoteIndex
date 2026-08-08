@@ -11,6 +11,8 @@ import cz.martim12.noteindex.search.query.ParsedQuery;
 import cz.martim12.noteindex.search.query.QueryParser;
 import cz.martim12.noteindex.search.snippet.Snippet;
 import cz.martim12.noteindex.search.snippet.SnippetExtractor;
+import cz.martim12.noteindex.core.model.HighlightRange;
+import cz.martim12.noteindex.search.snippet.SnippetMatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,9 +96,62 @@ public final class DocumentSearchWorkflow {
     }
 
     private SearchResult createResult(Document document, SearchHit hit, ParsedQuery parsedQuery) {
-        Snippet snippet = snippetExtractor.extract(document.searchableContent(), parsedQuery, maximumSnippetLength);
+        Snippet snippet =
+                snippetExtractor.extract(
+                        document.searchableContent(),
+                        parsedQuery,
+                        maximumSnippetLength
+                );
 
-        return new SearchResult(toSummary(document), hit.score(), snippet.displayText());
+        return new SearchResult(
+                toSummary(document),
+                hit.score(),
+                snippet.displayText(),
+                snippetHighlights(snippet),
+                contentHighlights(snippet)
+        );
+    }
+
+    private static List<HighlightRange> contentHighlights(
+            Snippet snippet
+    ) {
+        return snippet.matches()
+                .stream()
+                .map(match ->
+                        new HighlightRange(
+                                match.sourceStartOffset(),
+                                match.sourceEndOffset()
+                        )
+                )
+                .distinct()
+                .toList();
+    }
+
+    private static List<HighlightRange> snippetHighlights(Snippet snippet) {
+        int displayPrefixLength =
+                snippet.truncatedAtStart() ? 3 : 0;
+
+        return snippet.matches()
+                .stream()
+                .filter(match ->
+                        isFullyInsideSnippet(
+                                match,
+                                snippet
+                        )
+                )
+                .map(match ->
+                        new HighlightRange(
+                                displayPrefixLength
+                                        + match.sourceStartOffset()
+                                        - snippet.sourceStartOffset(),
+
+                                displayPrefixLength
+                                        + match.sourceEndOffset()
+                                        - snippet.sourceStartOffset()
+                        )
+                )
+                .distinct()
+                .toList();
     }
 
     private static DocumentSummary toSummary(Document document) {
@@ -106,6 +161,16 @@ public final class DocumentSearchWorkflow {
                 document.format(),
                 document.importedAt()
         );
+    }
+
+    private static boolean isFullyInsideSnippet(
+            SnippetMatch match,
+            Snippet snippet
+    ) {
+        return match.sourceStartOffset()
+                >= snippet.sourceStartOffset()
+                && match.sourceEndOffset()
+                <= snippet.sourceEndOffset();
     }
 
 }

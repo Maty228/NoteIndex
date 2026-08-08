@@ -1,10 +1,6 @@
 package cz.martim12.noteindex.application.search;
 
-import cz.martim12.noteindex.core.model.Document;
-import cz.martim12.noteindex.core.model.DocumentSummary;
-import cz.martim12.noteindex.core.model.ImportedDocument;
-import cz.martim12.noteindex.core.model.SearchQuery;
-import cz.martim12.noteindex.core.model.SearchResult;
+import cz.martim12.noteindex.core.model.*;
 import cz.martim12.noteindex.persistence.api.DocumentRepository;
 import cz.martim12.noteindex.search.analysis.UnicodeTextAnalyzer;
 import cz.martim12.noteindex.search.engine.SearchEngine;
@@ -13,6 +9,8 @@ import cz.martim12.noteindex.search.query.DefaultQueryParser;
 import cz.martim12.noteindex.search.query.QueryParser;
 import cz.martim12.noteindex.search.snippet.ContextAwareSnippetExtractor;
 import cz.martim12.noteindex.search.snippet.SnippetExtractor;
+import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,9 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class DocumentSearchWorkflowTest {
 
@@ -42,7 +38,10 @@ class DocumentSearchWorkflowTest {
                 new DefaultQueryParser(analyzer);
 
         SnippetExtractor snippetExtractor =
-                new ContextAwareSnippetExtractor(analyzer);
+                new ContextAwareSnippetExtractor(
+                        analyzer,
+                        StandaloneTermMatchMode.PREFIX
+                );
 
         repository = new StubDocumentRepository(
                 List.of(
@@ -258,6 +257,40 @@ class DocumentSearchWorkflowTest {
                         ),
                         0
                 )
+        );
+    }
+
+    @Test
+    void exposesCompleteMatchedTokenForHighlighting() {
+        searchEngine.hits = List.of(
+                new SearchHit(
+                        1,
+                        3.0,
+                        0.0
+                )
+        );
+
+        List<SearchResult> results =
+                workflow.search(
+                        new SearchQuery("virt"),
+                        10
+                );
+
+        SearchResult result =
+                results.getFirst();
+
+        assertFalse(
+                result.contentHighlights()
+                        .isEmpty()
+        );
+
+        HighlightRange range =
+                result.contentHighlights()
+                        .getFirst();
+
+        assertEquals(
+                new HighlightRange(4, 11),
+                range
         );
     }
 

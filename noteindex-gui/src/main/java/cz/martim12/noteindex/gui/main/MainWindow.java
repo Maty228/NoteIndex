@@ -306,9 +306,26 @@ public final class MainWindow {
                 (observable, oldValue, newValue) -> {
                     if (newValue == null) {
                         documentViewer.showEmpty();
-                    } else {
-                        documentViewer.showDocument(newValue);
+                        return;
                     }
+
+                    SearchResult searchResult =
+                            selectedSearchResultFor(
+                                    newValue.id()
+                            );
+
+                    if (searchResult == null) {
+                        documentViewer.showDocument(
+                                newValue
+                        );
+
+                        return;
+                    }
+
+                    documentViewer.showDocument(
+                            newValue,
+                            searchResult.contentHighlights()
+                    );
                 }
         );
 
@@ -344,6 +361,28 @@ public final class MainWindow {
         });
 
         updateDocumentCount(viewModel.totalDocumentCountProperty().get());
+    }
+
+    private SearchResult selectedSearchResultFor(
+            long documentId
+    ) {
+        if (!searchMode) {
+            return null;
+        }
+
+        SearchResult result =
+                searchResultList
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (result == null
+                || result.document().id()
+                != documentId) {
+
+            return null;
+        }
+
+        return result;
     }
 
     private void activateLibraryView(MainViewModel.LibraryView libraryView) {
@@ -568,13 +607,15 @@ public final class MainWindow {
             }
         });
 
-        searchResultList.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        viewModel.selectDocument(newValue.document());
-                    }
-                }
-        );
+        searchResultList.getSelectionModel()
+                .selectedItemProperty()
+                .addListener(
+                        (observable, oldValue, newValue) -> {
+                            if (newValue != null) {
+                                displaySearchResult(newValue);
+                            }
+                        }
+                );
 
         searchCoordinator.results().addListener(
                 (ListChangeListener<SearchResult>) change -> handleSearchResultsChanged()
@@ -615,6 +656,29 @@ public final class MainWindow {
         );
     }
 
+    private void displaySearchResult(
+            SearchResult result
+    ) {
+        var loadedDocument =
+                viewModel.selectedDocumentProperty().get();
+
+        if (loadedDocument != null
+                && loadedDocument.id()
+                == result.document().id()) {
+
+            documentViewer.showDocument(
+                    loadedDocument,
+                    result.contentHighlights()
+            );
+
+            return;
+        }
+
+        viewModel.selectDocument(
+                result.document()
+        );
+    }
+
     private void showSearchMode() {
         if (searchMode) {
             documentCountLabel.setText("Searching...");
@@ -642,6 +706,7 @@ public final class MainWindow {
         }
 
         searchMode = false;
+        documentViewer.clearHighlights();
 
         documentPaneTitle.setText("Documents");
 
@@ -674,7 +739,16 @@ public final class MainWindow {
             return;
         }
 
+        /*
+         * Force a real selection event even when the first result is
+         * the same document as for the previous query.
+         */
+        searchResultList.getSelectionModel()
+                .clearSelection();
+
         searchResultList.getSelectionModel().selectFirst();
+
+
     }
 
     private void updateSearchResultCount() {
@@ -1136,7 +1210,11 @@ public final class MainWindow {
                 requestDeleteDocument(selectedDocumentSummary())
         );
 
-        ContextMenu menu = new ContextMenu(deleteItem);
+        ContextMenu menu = new ContextMenu(
+                renameItem,
+                new SeparatorMenuItem(),
+                deleteItem
+        );
         menu.getStyleClass().add("noteindex-context-menu");
 
         menu.show(owner, Side.BOTTOM, 0, 4);
@@ -1246,6 +1324,31 @@ public final class MainWindow {
                             );
                         })
                 );
+    }
+
+    private void refreshSelectedSearchHighlights() {
+        if (!searchMode || viewModel == null) {
+            return;
+        }
+
+        SearchResult result =
+                searchResultList.getSelectionModel()
+                        .getSelectedItem();
+
+        var document =
+                viewModel.selectedDocumentProperty().get();
+
+        if (result == null
+                || document == null
+                || result.document().id() != document.id()) {
+
+            return;
+        }
+
+        documentViewer.showDocument(
+                document,
+                result.contentHighlights()
+        );
     }
 
     private void selectNearestLibraryDocument(int previousIndex) {

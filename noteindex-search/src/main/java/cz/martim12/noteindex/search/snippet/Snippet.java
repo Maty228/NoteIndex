@@ -1,5 +1,6 @@
 package cz.martim12.noteindex.search.snippet;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -13,16 +14,27 @@ import java.util.Objects;
  * @param sourceEndOffset exclusive end offset in source text
  * @param truncatedAtStart whether source text exists before the snippet
  * @param truncatedAtEnd whether source text exists after the snippet
+ * @param matches query matches in the complete source text
  */
-public record Snippet (
+public record Snippet(
         String text,
         int sourceStartOffset,
         int sourceEndOffset,
         boolean truncatedAtStart,
-        boolean truncatedAtEnd
-){
+        boolean truncatedAtEnd,
+        List<SnippetMatch> matches
+) {
+
     public Snippet {
-        Objects.requireNonNull(text, "Snippet text must not be null");
+        Objects.requireNonNull(
+                text,
+                "Snippet text must not be null"
+        );
+
+        Objects.requireNonNull(
+                matches,
+                "Snippet matches must not be null"
+        );
 
         if (sourceStartOffset < 0) {
             throw new IllegalArgumentException(
@@ -36,16 +48,37 @@ public record Snippet (
             );
         }
 
-        if (text.length() != sourceEndOffset - sourceStartOffset) {
+        if (text.length()
+                != sourceEndOffset - sourceStartOffset) {
+
             throw new IllegalArgumentException(
                     "Snippet length must match its source offsets"
             );
         }
+
+        matches = List.copyOf(matches);
     }
 
     /**
-     * Returns a user-facing representation with ellipses.
+     * Compatibility constructor for snippets without match metadata.
      */
+    public Snippet(
+            String text,
+            int sourceStartOffset,
+            int sourceEndOffset,
+            boolean truncatedAtStart,
+            boolean truncatedAtEnd
+    ) {
+        this(
+                text,
+                sourceStartOffset,
+                sourceEndOffset,
+                truncatedAtStart,
+                truncatedAtEnd,
+                List.of()
+        );
+    }
+
     public String displayText() {
         StringBuilder displayed = new StringBuilder();
 

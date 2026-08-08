@@ -135,13 +135,17 @@
     -fx-text-fill: #252a32;
 }
 
-.document-list .list-cell:hover {
+.document-list .list-cell:filled:hover {
     -fx-background-color: #f5f6f8;
 }
 
-.document-list .list-cell:selected {
+.document-list .list-cell:filled:selected {
     -fx-background-color: rgba(101, 84, 232, 0.12);
     -fx-text-fill: #24203d;
+}
+
+.document-list .list-cell:empty {
+    -fx-background-color: transparent;
 }
 
 .welcome-plus {
@@ -600,4 +604,38 @@
 .modal-text-field:focused {
     -fx-background-color: #ffffff;
     -fx-border-color: #6554e8;
+}
+
+
+.viewer-preview-scroll,
+.viewer-preview-scroll > .viewport,
+.viewer-highlighted-content {
+    -fx-background-color: #ffffff;
+}
+
+.viewer-highlighted-content .highlighted-text {
+    -fx-fill: #252a32;
+}
+
+.search-result-snippet .highlighted-text {
+    -fx-fill: #626b78;
+}
+
+.search-highlight-background {
+    -fx-fill: rgba(101, 84, 232, 0.20);
+    -fx-stroke: rgba(81, 66, 200, 0.28);
+    -fx-stroke-width: 0.6px;
+}
+
+.highlighted-text-match {
+    -fx-fill: #5142c8;
+    -fx-font-weight: 700;
+}
+
+.search-result-title {
+    -fx-text-fill: #242931;
+}
+
+.search-result-metadata {
+    -fx-text-fill: #969da7;
 }

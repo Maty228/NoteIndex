@@ -4,7 +4,9 @@ import cz.martim12.noteindex.search.analysis.AnalyzedToken;
 import cz.martim12.noteindex.search.analysis.TextAnalyzer;
 import cz.martim12.noteindex.search.query.ParsedQuery;
 import cz.martim12.noteindex.search.query.QueryPhrase;
+import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
 
+import java.util.LinkedHashSet;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,11 +22,27 @@ import java.util.Set;
 public final class ContextAwareSnippetExtractor implements SnippetExtractor {
 
     private final TextAnalyzer analyzer;
+    private final StandaloneTermMatchMode standaloneTermMatchMode;
 
     public ContextAwareSnippetExtractor(TextAnalyzer analyzer) {
+        this(
+                analyzer,
+                StandaloneTermMatchMode.EXACT
+        );
+    }
+
+    public ContextAwareSnippetExtractor(
+            TextAnalyzer analyzer,
+            StandaloneTermMatchMode standaloneTermMatchMode
+    ) {
         this.analyzer = Objects.requireNonNull(
                 analyzer,
                 "Text analyzer must not be null"
+        );
+
+        this.standaloneTermMatchMode = Objects.requireNonNull(
+                standaloneTermMatchMode,
+                "Standalone term match mode must not be null"
         );
     }
 
@@ -66,33 +84,47 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
             }
         }
 
-        return toSnippet(text, bestWindow);
+        return toSnippet(text, bestWindow, matches);
     }
 
-    private static List<MatchSpan> findMatches(List<AnalyzedToken> tokens, ParsedQuery query) {
-        List<MatchSpan> matches = new ArrayList<>();
+    private List<MatchSpan> findMatches(List<AnalyzedToken> tokens, ParsedQuery query) {
+        LinkedHashSet<MatchSpan> matches =
+                new LinkedHashSet<>();
 
         addPhraseMatches(tokens, query.requiredPhrases(), matches);
-        addTermMatches(tokens, query.allTerms(), matches);
+
+        addStandaloneTermMatches(tokens, query.terms(), matches);
+
+        addPhraseTermMatches(tokens, query.requiredPhrases(), matches);
 
         return List.copyOf(matches);
     }
 
-    private static void addPhraseMatches(List<AnalyzedToken> tokens, List<QueryPhrase> phrases, List<MatchSpan> destination) {
+    private static void addPhraseMatches(List<AnalyzedToken> tokens, List<QueryPhrase> phrases, Set<MatchSpan> destination) {
         for (QueryPhrase phrase : phrases) {
             int phraseLength = phrase.length();
 
-            for (int start = 0; start <= tokens.size() - phraseLength; start++) {
+            for (
+                    int start = 0;
+                    start <= tokens.size() - phraseLength;
+                    start++
+            ) {
                 if (!matchesPhrase(tokens, start, phrase)) {
                     continue;
                 }
 
                 AnalyzedToken first = tokens.get(start);
-                AnalyzedToken last = tokens.get(start + phraseLength - 1);
+                AnalyzedToken last =
+                        tokens.get(start + phraseLength - 1);
 
-                destination.add(new MatchSpan(
-                        first.startOffset(), last.endOffset(), null, true
-                ));
+                destination.add(
+                        new MatchSpan(
+                                first.startOffset(),
+                                last.endOffset(),
+                                null,
+                                true
+                        )
+                );
             }
         }
     }
@@ -107,18 +139,71 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return true;
     }
 
-    private static void addTermMatches(List<AnalyzedToken> tokens, List<String> queryTerms, List<MatchSpan> destination) {
-        Set<String> terms = Set.copyOf(queryTerms);
+    private void addStandaloneTermMatches(
+            List<AnalyzedToken> tokens,
+            List<String> queryTerms,
+            Set<MatchSpan> destination
+    ) {
+        for (AnalyzedToken token : tokens) {
+            for (String queryTerm : queryTerms) {
+                if (!matchesStandaloneTerm(
+                        token.term(),
+                        queryTerm
+                )) {
+                    continue;
+                }
+
+                destination.add(
+                        new MatchSpan(
+                                token.startOffset(),
+                                token.endOffset(),
+                                queryTerm,
+                                false
+                        )
+                );
+            }
+        }
+    }
+
+    private static void addPhraseTermMatches(
+            List<AnalyzedToken> tokens,
+            List<QueryPhrase> phrases,
+            Set<MatchSpan> destination
+    ) {
+        Set<String> phraseTerms =
+                new LinkedHashSet<>();
+
+        for (QueryPhrase phrase : phrases) {
+            phraseTerms.addAll(phrase.terms());
+        }
 
         for (AnalyzedToken token : tokens) {
-            if (!terms.contains(token.term())) {
+            if (!phraseTerms.contains(token.term())) {
                 continue;
             }
 
-            destination.add(new MatchSpan(
-                    token.startOffset(), token.endOffset(), token.term(), false)
+            destination.add(
+                    new MatchSpan(
+                            token.startOffset(),
+                            token.endOffset(),
+                            token.term(),
+                            false
+                    )
             );
         }
+    }
+
+    private boolean matchesStandaloneTerm(
+            String indexedTerm,
+            String queryTerm
+    ) {
+        return switch (standaloneTermMatchMode) {
+            case EXACT ->
+                    indexedTerm.equals(queryTerm);
+
+            case PREFIX ->
+                    indexedTerm.startsWith(queryTerm);
+        };
     }
 
     private static TextWindow createWindow(String text, MatchSpan anchor, int maximumLength) {
@@ -231,9 +316,28 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return new Snippet(text.substring(0, end), 0, end, false, end < text.length());
     }
 
-    private static Snippet toSnippet(String text, TextWindow window) {
+    private static Snippet toSnippet(String text, TextWindow window, List<MatchSpan> matches) {
+        List<SnippetMatch> snippetMatches =
+                matches.stream()
+                        .map(match ->
+                                new SnippetMatch(
+                                        match.startOffset(),
+                                        match.endOffset()
+                                )
+                        )
+                        .distinct()
+                        .toList();
+
         return new Snippet(
-                text.substring(window.startOffset(), window.endOffset()), window.startOffset(), window.endOffset(), window.startOffset() > 0, window.endOffset() < text.length()
+                text.substring(
+                        window.startOffset(),
+                        window.endOffset()
+                ),
+                window.startOffset(),
+                window.endOffset(),
+                window.startOffset() > 0,
+                window.endOffset() < text.length(),
+                snippetMatches
         );
     }
 
