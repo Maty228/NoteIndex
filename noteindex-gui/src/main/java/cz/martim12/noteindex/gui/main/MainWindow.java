@@ -1,6 +1,7 @@
 package cz.martim12.noteindex.gui.main;
 
 import cz.martim12.noteindex.core.model.DocumentSummary;
+import cz.martim12.noteindex.gui.component.TextInputPane;
 import cz.martim12.noteindex.gui.importflow.ImportCoordinator;
 import cz.martim12.noteindex.gui.library.DocumentListCell;
 import cz.martim12.noteindex.gui.viewer.DocumentViewer;
@@ -15,26 +16,15 @@ import cz.martim12.noteindex.gui.component.MessagePane;
 import cz.martim12.noteindex.gui.component.ModalHost;
 import cz.martim12.noteindex.gui.importflow.ImportProgressPane;
 
-
 import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.Separator;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -54,8 +44,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.geometry.Side;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
+
 
 import java.io.File;
 import java.nio.file.Path;
@@ -92,6 +81,7 @@ public final class MainWindow {
     private ImportCoordinator importCoordinator;
     private boolean importInProgress;
     private boolean deleteInProgress;
+    private boolean renameInProgress;
 
 
     private final StackPane windowStack;
@@ -198,7 +188,7 @@ public final class MainWindow {
         );
 
         configureDragAndDrop();
-        configureDeletionActions();
+        configureDocumentActions();
 
         hideStartupOverlay();
         hideDropOverlay();
@@ -1125,6 +1115,18 @@ public final class MainWindow {
     private void showDocumentActions(Button owner) {
         DocumentSummary selected = selectedDocumentSummary();
 
+        MenuItem renameItem = new MenuItem("Rename note");
+
+        renameItem.setDisable(
+                selected == null
+                        || renameInProgress
+                        || deleteInProgress
+        );
+
+        renameItem.setOnAction(event ->
+                requestRenameDocument(selected)
+        );
+
         MenuItem deleteItem = new MenuItem("Delete selected note");
         deleteItem.getStyleClass().add("danger-menu-item");
 
@@ -1545,7 +1547,17 @@ public final class MainWindow {
         });
     }
 
-    private void configureDeletionActions() {
+    private void configureDocumentActions() {
+
+        MenuItem renameDocumentItem = new MenuItem("Rename note");
+
+        renameDocumentItem.setOnAction(event ->
+                requestRenameDocument(
+                        documentList.getSelectionModel().getSelectedItem()
+                )
+        );
+
+
         MenuItem deleteDocumentItem = new MenuItem("Delete from NoteIndex");
 
         deleteDocumentItem.setOnAction(event ->
@@ -1555,17 +1567,43 @@ public final class MainWindow {
         );
         deleteDocumentItem.getStyleClass().add("danger-menu-item");
 
-        ContextMenu documentMenu = new ContextMenu(deleteDocumentItem);
+        ContextMenu documentMenu = new ContextMenu(renameDocumentItem, new SeparatorMenuItem(), deleteDocumentItem);
         documentMenu.getStyleClass().add("noteindex-context-menu");
 
-        documentMenu.setOnShowing(event ->
-                deleteDocumentItem.setDisable(
-                        deleteInProgress
-                                || documentList.getSelectionModel().getSelectedItem() == null
-                )
-        );
+        documentMenu.setOnShowing(event -> {
+            boolean unavailable =
+                    documentList.getSelectionModel()
+                            .getSelectedItem() == null;
+
+            renameDocumentItem.setDisable(
+                    unavailable
+                            || renameInProgress
+                            || deleteInProgress
+            );
+
+            deleteDocumentItem.setDisable(
+                    unavailable
+                            || renameInProgress
+                            || deleteInProgress
+            );
+        });
 
         documentList.setContextMenu(documentMenu);
+
+
+        MenuItem renameSearchResultItem =
+                new MenuItem("Rename note");
+
+        renameSearchResultItem.setOnAction(event -> {
+            SearchResult result =
+                    searchResultList.getSelectionModel()
+                            .getSelectedItem();
+
+            if (result != null) {
+                requestRenameDocument(result.document());
+            }
+        });
+
 
         MenuItem deleteSearchResultItem = new MenuItem("Delete from NoteIndex");
         deleteSearchResultItem.getStyleClass().add("danger-menu-item");
@@ -1579,16 +1617,27 @@ public final class MainWindow {
             }
         });
 
-        ContextMenu searchMenu = new ContextMenu(deleteSearchResultItem);
+        ContextMenu searchMenu = new ContextMenu(renameSearchResultItem, new SeparatorMenuItem(), deleteSearchResultItem);
         searchMenu.getStyleClass().add("noteindex-context-menu");
 
 
-        searchMenu.setOnShowing(event ->
-                deleteSearchResultItem.setDisable(
-                        deleteInProgress
-                                || searchResultList.getSelectionModel().getSelectedItem() == null
-                )
-        );
+        searchMenu.setOnShowing(event -> {
+            boolean unavailable =
+                    searchResultList.getSelectionModel()
+                            .getSelectedItem() == null;
+
+            renameSearchResultItem.setDisable(
+                    unavailable
+                            || renameInProgress
+                            || deleteInProgress
+            );
+
+            deleteSearchResultItem.setDisable(
+                    unavailable
+                            || renameInProgress
+                            || deleteInProgress
+            );
+        });
 
         searchResultList.setContextMenu(searchMenu);
 
@@ -1622,6 +1671,132 @@ public final class MainWindow {
     private static boolean isDeleteKey(KeyEvent event) {
         return event.getCode() == KeyCode.DELETE
                 || event.getCode() == KeyCode.BACK_SPACE;
+    }
+
+    private void requestRenameDocument(DocumentSummary document) {
+        if (document == null
+                || renameInProgress
+                || deleteInProgress
+                || modalHost.isShowing()) {
+
+            return;
+        }
+
+        TextInputPane input = new TextInputPane(
+                "Rename note",
+                "Choose a new name",
+                document.title(),
+                "Save",
+                modalHost::hide,
+                newTitle -> {
+                    modalHost.hide();
+                    renameDocument(document, newTitle);
+                }
+        );
+
+        modalHost.show(input.root());
+    }
+
+    private void renameDocument(
+            DocumentSummary document,
+            String newTitle
+    ) {
+        if (renameInProgress) {
+            return;
+        }
+
+        renameInProgress = true;
+
+        documentList.setDisable(true);
+        searchResultList.setDisable(true);
+
+        setStatus(
+                "Renaming note...",
+                "status-dot-loading"
+        );
+
+        viewModel.renameDocument(document.id(), newTitle)
+                .thenCompose(renamed ->
+                        viewModel.refresh()
+                                .thenApply(ignored -> renamed)
+                )
+                .whenComplete((renamed, failure) ->
+                        Platform.runLater(() -> {
+                            renameInProgress = false;
+
+                            documentList.setDisable(false);
+                            searchResultList.setDisable(false);
+
+                            if (failure != null) {
+                                setStatus(
+                                        "Rename failed",
+                                        "status-dot-error"
+                                );
+
+                                return;
+                            }
+
+                            if (!renamed) {
+                                setStatus(
+                                        "Note no longer exists",
+                                        "status-dot-error"
+                                );
+
+                                return;
+                            }
+
+                            if (searchMode
+                                    && searchCoordinator != null
+                                    && !searchField.getText().isBlank()) {
+
+                                refreshSearchAfterRename(
+                                        document.id()
+                                );
+
+                                return;
+                            }
+
+                            selectDocument(document.id());
+
+                            setStatus(
+                                    "Note renamed",
+                                    "status-dot-ready"
+                            );
+                        })
+                );
+    }
+
+
+    private void refreshSearchAfterRename(long documentId) {
+        String currentQuery = searchField.getText();
+
+        searchCoordinator.search(currentQuery)
+                .whenComplete((ignored, failure) ->
+                        Platform.runLater(() -> {
+                            if (failure != null) {
+                                return;
+                            }
+
+                            selectSearchResult(documentId);
+
+                            setStatus(
+                                    "Note renamed",
+                                    "status-dot-ready"
+                            );
+                        })
+                );
+    }
+
+    private void selectSearchResult(long documentId) {
+        searchResultList.getItems().stream()
+                .filter(result ->
+                        result.document().id() == documentId
+                )
+                .findFirst()
+                .ifPresent(result ->
+                        searchResultList.getSelectionModel()
+                                .select(result)
+                );
     }
 
     public void connectSettings(SettingsView settingsView) {

@@ -61,9 +61,52 @@ public final class DocumentCatalogWorkflow {
         return deleted;
     }
 
+    /**
+     * Changes the user-visible document title and synchronizes the
+     * derived search index.
+     *
+     * The original source file is not modified.
+     *
+     * @return true when the persisted document existed
+     */
+    public boolean renameDocument(long documentId, String newTitle) {
+        requirePositiveDocumentId(documentId);
+        requireNonBlankTitle(newTitle);
+
+        boolean renamed = documentRepository.updateDisplayTitle(
+                documentId,
+                newTitle.trim()
+        );
+
+        if (!renamed) {
+            indexSynchronizer.removeDocument(documentId);
+            return false;
+        }
+
+        Optional<Document> updatedDocument =
+                documentRepository.findById(documentId);
+
+        if (updatedDocument.isEmpty()) {
+            indexSynchronizer.removeDocument(documentId);
+            return false;
+        }
+
+        indexSynchronizer.indexDocument(updatedDocument.orElseThrow());
+
+        return true;
+    }
+
     private static void requirePositiveDocumentId(long documentId) {
         if (documentId <= 0) {
             throw new IllegalArgumentException("Document ID must be positive");
+        }
+    }
+
+    private static void requireNonBlankTitle(String title) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Document title must not be blank"
+            );
         }
     }
 }

@@ -19,4 +19,6 @@ public interface DocumentRepository {
     boolean existsBySourceUri(String sourceUri);
 
     boolean deleteById(long id);
+
+    boolean updateDisplayTitle(long id, String displayTitle);
 }

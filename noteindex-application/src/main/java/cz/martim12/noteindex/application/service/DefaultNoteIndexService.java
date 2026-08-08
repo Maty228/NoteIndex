@@ -80,6 +80,12 @@ public final class DefaultNoteIndexService implements NoteIndexService {
     }
 
     @Override
+    public boolean renameDocument(long documentId, String newTitle) {
+        ensureOpen();
+        return catalogWorkflow.renameDocument(documentId, newTitle);
+    }
+
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             searchRuntime.close();

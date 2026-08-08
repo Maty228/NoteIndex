@@ -647,3 +647,15 @@
     -fx-padding: 0;
     -fx-shape: "";
 }
+
+.modal-text-field {
+    -fx-min-height: 40px;
+    -fx-pref-height: 40px;
+
+    -fx-padding: 0 12px;
+
+    -fx-background-radius: 9px;
+    -fx-border-radius: 9px;
+
+    -fx-font-size: 13.5px;
+}

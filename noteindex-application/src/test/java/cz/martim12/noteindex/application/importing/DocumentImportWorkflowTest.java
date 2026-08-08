@@ -282,5 +282,10 @@ class DocumentImportWorkflowTest {
         public boolean deleteById(long id) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean updateDisplayTitle(long id, String displayTitle) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

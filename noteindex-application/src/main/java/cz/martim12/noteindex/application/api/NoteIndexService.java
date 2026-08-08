@@ -56,6 +56,17 @@ public interface NoteIndexService extends AutoCloseable{
     boolean deleteDocument(long documentId);
 
     /**
+     * Changes the user-visible title of a stored document.
+     *
+     * The original source file is not renamed or otherwise modified.
+     *
+     * @param documentId stored document ID
+     * @param newTitle new user-visible title
+     * @return true when the document existed and was renamed
+     */
+    boolean renameDocument(long documentId, String newTitle);
+
+    /**
      * Returns normalized extensions accepted by the available
      * importer plugins, without leading dots.
      */

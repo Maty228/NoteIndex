@@ -406,6 +406,16 @@ class CliBrowsingCommandsTest {
         }
 
         @Override
+        public boolean renameDocument(
+                long documentId,
+                String newTitle
+        ) {
+            throw new AssertionError(
+                    "Rename must not be called"
+            );
+        }
+
+        @Override
         public Document importFile(Path source) {
             throw new AssertionError(
                     "Import must not be called"

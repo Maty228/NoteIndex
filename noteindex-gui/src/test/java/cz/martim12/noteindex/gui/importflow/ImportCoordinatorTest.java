@@ -194,6 +194,16 @@ class ImportCoordinatorTest {
         }
 
         @Override
+        public boolean renameDocument(
+                long documentId,
+                String newTitle
+        ) {
+            throw new AssertionError(
+                    "Rename must not be called"
+            );
+        }
+
+        @Override
         public List<DocumentSummary> listDocuments() {
             return List.of();
         }

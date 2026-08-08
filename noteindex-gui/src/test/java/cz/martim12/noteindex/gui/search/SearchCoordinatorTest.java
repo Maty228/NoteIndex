@@ -237,6 +237,16 @@ class SearchCoordinatorTest {
         }
 
         @Override
+        public boolean renameDocument(
+                long documentId,
+                String newTitle
+        ) {
+            throw new AssertionError(
+                    "Rename must not be called"
+            );
+        }
+
+        @Override
         public void close() {
         }
     }

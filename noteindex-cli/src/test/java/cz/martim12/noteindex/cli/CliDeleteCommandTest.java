@@ -310,6 +310,16 @@ class CliDeleteCommandTest {
         }
 
         @Override
+        public boolean renameDocument(
+                long documentId,
+                String newTitle
+        ) {
+            throw new AssertionError(
+                    "Rename must not be called"
+            );
+        }
+
+        @Override
         public Set<String> supportedImportExtensions() {
             throw new AssertionError(
                     "Formats must not be called"

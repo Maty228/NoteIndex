@@ -222,6 +222,59 @@ public final class MainViewModel implements AutoCloseable {
         return result;
     }
 
+    public CompletableFuture<Boolean> renameDocument(
+            long documentId,
+            String newTitle
+    ) {
+        ensureOpen();
+
+        if (documentId <= 0) {
+            throw new IllegalArgumentException(
+                    "Document ID must be positive"
+            );
+        }
+
+        if (newTitle == null || newTitle.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Document title must not be blank"
+            );
+        }
+
+        selectionGeneration.incrementAndGet();
+
+        String normalizedTitle = newTitle.trim();
+
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
+
+        CompletableFuture
+                .supplyAsync(
+                        () -> service.renameDocument(
+                                documentId,
+                                normalizedTitle
+                        ),
+                        executor
+                )
+                .whenComplete((renamed, failure) ->
+                        uiExecutor.accept(() -> {
+                            if (closed.get()) {
+                                result.complete(false);
+                                return;
+                            }
+
+                            if (failure != null) {
+                                Throwable actualFailure = unwrap(failure);
+
+                                error.set(actualFailure);
+                                result.completeExceptionally(actualFailure);
+                                return;
+                            }
+
+                            result.complete(renamed);
+                        }));
+
+        return result;
+    }
+
 
     public void setLibraryView(LibraryView view) {
         ensureOpen();

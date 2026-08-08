@@ -251,6 +251,52 @@ class DocumentCatalogWorkflowTest {
         assertTrue(repository.deletedDocumentIds.isEmpty());
     }
 
+    @Test
+    void renamesDocumentAndUpdatesSearchIndex() {
+        Document original =
+                repository.findById(1).orElseThrow();
+
+        searchIndex.indexDocument(
+                new DocumentIndexMapper().map(original)
+        );
+
+        assertFalse(
+                searchIndex.postings(
+                        "java",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+
+        assertTrue(
+                workflow.renameDocument(
+                        1,
+                        "Concurrency Notes"
+                )
+        );
+
+        Document renamed =
+                repository.findById(1).orElseThrow();
+
+        assertEquals(
+                "Concurrency Notes",
+                renamed.title()
+        );
+
+        assertTrue(
+                searchIndex.postings(
+                        "java",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+
+        assertFalse(
+                searchIndex.postings(
+                        "concurrency",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+    }
+
     private static Document document(
             long id,
             String title,
@@ -346,6 +392,29 @@ class DocumentCatalogWorkflowTest {
                 String sourceUri
         ) {
             throw new UnsupportedOperationException();
+        }
+        @Override
+        public boolean updateDisplayTitle(long id, String displayTitle) {
+            Document existing = documents.get(id);
+
+            if (existing == null) {
+                return false;
+            }
+
+            documents.put(
+                    id,
+                    new Document(
+                            existing.id(),
+                            displayTitle,
+                            existing.sourceUri(),
+                            existing.format(),
+                            existing.originalContent(),
+                            existing.searchableContent(),
+                            existing.importedAt()
+                    )
+            );
+
+            return true;
         }
     }
 }

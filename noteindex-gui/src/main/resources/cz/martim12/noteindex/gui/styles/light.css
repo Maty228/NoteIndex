@@ -588,3 +588,16 @@
 .import-button-busy {
     -fx-opacity: 0.78;
 }
+
+.modal-text-field {
+    -fx-background-color: #f4f5f7;
+    -fx-border-color: #dfe3e8;
+
+    -fx-text-fill: #252a32;
+    -fx-prompt-text-fill: #8a929e;
+}
+
+.modal-text-field:focused {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #6554e8;
+}

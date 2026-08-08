@@ -364,5 +364,29 @@ class NoteIndexApplicationsTest {
         public boolean deleteById(long id) {
             return documents.remove(id) != null;
         }
+
+        @Override
+        public boolean updateDisplayTitle(long id, String displayTitle) {
+            Document existing = documents.get(id);
+
+            if (existing == null) {
+                return false;
+            }
+
+            Document renamed = new Document(
+                    existing.id(),
+                    displayTitle,
+                    existing.sourceUri(),
+                    existing.format(),
+                    existing.originalContent(),
+                    existing.searchableContent(),
+                    existing.importedAt()
+            );
+
+            documents.put(id, renamed);
+
+            return true;
+        }
+
     }
 }

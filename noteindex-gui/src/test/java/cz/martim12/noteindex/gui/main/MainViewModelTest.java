@@ -119,6 +119,35 @@ class MainViewModelTest {
         }
     }
 
+    @Test
+    void renamesDocumentThroughApplicationService() throws Exception {
+        StubService service = new StubService();
+
+        MainViewModel viewModel = createViewModel(service);
+
+        try {
+            boolean renamed = viewModel.renameDocument(
+                    7,
+                    "Neural Networks"
+            ).get(3, TimeUnit.SECONDS);
+
+            assertTrue(renamed);
+
+            assertEquals(
+                    7,
+                    service.renamedDocumentId
+            );
+
+            assertEquals(
+                    "Neural Networks",
+                    service.renamedTitle
+            );
+
+        } finally {
+            viewModel.close();
+        }
+    }
+
     private MainViewModel createViewModel(StubService service) {
         return new MainViewModel(
                 service,
@@ -151,6 +180,10 @@ class MainViewModelTest {
         private RuntimeException listFailure;
         private long requestedDocumentId;
 
+        private boolean renameResult = true;
+        private long renamedDocumentId;
+        private String renamedTitle;
+
         @Override
         public List<DocumentSummary> listDocuments() {
             if (listFailure != null) {
@@ -177,6 +210,17 @@ class MainViewModelTest {
         }
 
         @Override
+        public boolean renameDocument(
+                long documentId,
+                String newTitle
+        ) {
+            renamedDocumentId = documentId;
+            renamedTitle = newTitle;
+
+            return renameResult;
+        }
+
+        @Override
         public boolean deleteDocument(long documentId) {
             deletedDocumentId = documentId;
             boolean deleteResult = true;
@@ -192,6 +236,8 @@ class MainViewModelTest {
         public void close() {
         }
     }
+
+
 
     @Test
     void deletesSelectedDocumentAndClearsSelection() throws Exception {

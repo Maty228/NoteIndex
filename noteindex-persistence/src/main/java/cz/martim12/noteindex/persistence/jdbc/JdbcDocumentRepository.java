@@ -31,7 +31,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
     private static final String SELECT_BY_ID = """
             SELECT
                 id,
-                title,
+                COALESCE(display_title, title) AS title,
                 source_uri,
                 format_id,
                 original_content,
@@ -44,7 +44,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
     private static final String SELECT_ALL = """
             SELECT
                 id,
-                title,
+                COALESCE(display_title, title) AS title,
                 source_uri,
                 format_id,
                 original_content,
@@ -57,7 +57,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
     private static final String SELECT_ALL_SUMMARIES = """
             SELECT
                 id,
-                title,
+                COALESCE(display_title, title) AS title,
                 format_id,
                 imported_at
             FROM documents
@@ -75,6 +75,12 @@ public class JdbcDocumentRepository implements DocumentRepository {
             DELETE FROM documents
             WHERE id = ?
             """;
+
+    private static final String UPDATE_DISPLAY_TITLE = """
+        UPDATE documents
+        SET display_title = ?
+        WHERE id = ?
+        """;
 
     private final SqliteConnectionFactory connectionFactory;
     private final Clock clock;
@@ -235,6 +241,32 @@ public class JdbcDocumentRepository implements DocumentRepository {
         } catch (SQLException exception) {
             throw new RepositoryException(
                     "Could not check document source: " + sourceUri,
+                    exception
+            );
+        }
+    }
+
+    @Override
+    public boolean updateDisplayTitle(long id, String displayTitle) {
+        requirePositiveId(id);
+        requireNonBlank(displayTitle, "Display title");
+
+        String normalizedTitle = displayTitle.trim();
+
+        try (
+                Connection connection = connectionFactory.openConnection();
+                PreparedStatement statement = connection.prepareStatement(
+                        UPDATE_DISPLAY_TITLE
+                )
+        ) {
+            statement.setString(1, normalizedTitle);
+            statement.setLong(2, id);
+
+            return statement.executeUpdate() == 1;
+
+        } catch (SQLException exception) {
+            throw new RepositoryException(
+                    "Could not rename document with ID " + id,
                     exception
             );
         }
