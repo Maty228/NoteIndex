@@ -13,6 +13,12 @@ import java.util.Objects;
  */
 public final class DocumentIndexMapper {
 
+    /**
+     * Converts a persisted document into an index document.
+     *
+     * @param document persisted document
+     * @return representation used by the search index
+     */
     public IndexDocument map(Document document) {
         Objects.requireNonNull(document, "Document must not be null");
 

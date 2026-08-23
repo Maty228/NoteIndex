@@ -23,6 +23,9 @@ import java.util.Objects;
  */
 public final class NoteIndexApplications {
 
+    /**
+     * Default maximum length of generated search snippets.
+     */
     public static final int DEFAULT_MAXIMUM_SNIPPET_LENGTH = 240;
 
     private NoteIndexApplications() {}
@@ -30,6 +33,9 @@ public final class NoteIndexApplications {
     /**
      * Opens NoteIndex using a SQLite database file, discovers
      * importer plugins and rebuilds the in-memory search index.
+     *
+     * @param databaseFile SQLite database file to open
+     * @return opened NoteIndex application service
      */
     public static NoteIndexService open(Path databaseFile) {
         Objects.requireNonNull(databaseFile, "Database file must not be null");

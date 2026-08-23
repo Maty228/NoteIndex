@@ -21,7 +21,6 @@ import java.util.Objects;
 /**
  * Coordinates ranked search, document loading and snippet
  * extraction.
- *
  * The search index returns lightweight document IDs. Complete
  * document information is loaded from the authoritative
  * persistence repository.
@@ -34,6 +33,15 @@ public final class DocumentSearchWorkflow {
     private final SnippetExtractor snippetExtractor;
     private final int maximumSnippetLength;
 
+    /**
+     * Creates a document search workflow.
+     *
+     * @param documentRepository repository used to load complete documents
+     * @param searchEngine search engine used for ranking
+     * @param queryParser parser used for snippet generation
+     * @param snippetExtractor extractor used to create result snippets
+     * @param maximumSnippetLength maximum generated snippet length
+     */
     public DocumentSearchWorkflow(
             DocumentRepository documentRepository,
             SearchEngine searchEngine,
@@ -55,11 +63,13 @@ public final class DocumentSearchWorkflow {
     }
 
     /**
-     * Searches indexed documents and converts lightweight search
-     * hits into application-facing results.
+     * Searches indexed documents and converts search hits into application results.
      *
-     * Hits referencing documents no longer present in the
-     * authoritative repository are skipped.
+     * <p>Documents missing from the authoritative repository are skipped.</p>
+     *
+     * @param query user search query
+     * @param limit maximum number of returned results
+     * @return search results with snippets and highlights
      */
     public List<SearchResult> search(SearchQuery query, int limit) {
         Objects.requireNonNull(query, "Search query must not be null");

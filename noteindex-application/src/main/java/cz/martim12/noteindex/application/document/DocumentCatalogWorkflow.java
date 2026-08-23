@@ -11,7 +11,6 @@ import java.util.Optional;
 
 /**
  * Coordinates document browsing and deletion.
- *
  * The repository remains authoritative. After a delete attempt,
  * the corresponding derived search-index entry is removed as well.
  */
@@ -20,6 +19,12 @@ public final class DocumentCatalogWorkflow {
     private final DocumentRepository documentRepository;
     private final SearchIndexSynchronizer indexSynchronizer;
 
+    /**
+     * Creates a document catalog workflow.
+     *
+     * @param documentRepository repository containing stored documents
+     * @param indexSynchronizer synchronizer for derived search index data
+     */
     public DocumentCatalogWorkflow(DocumentRepository documentRepository, SearchIndexSynchronizer indexSynchronizer) {
         this.documentRepository = Objects.requireNonNull(documentRepository, "Document repository must not be null");
         this.indexSynchronizer = Objects.requireNonNull(indexSynchronizer, "Search index synchronizer must not be null");
@@ -27,6 +32,8 @@ public final class DocumentCatalogWorkflow {
 
     /**
      * Returns lightweight information about all stored documents.
+     *
+     * @return lightweight document summaries
      */
     public List<DocumentSummary> listDocuments() {
         return List.copyOf(documentRepository.findAllSummaries());
@@ -34,6 +41,9 @@ public final class DocumentCatalogWorkflow {
 
     /**
      * Loads one complete document when it exists.
+     *
+     * @param documentId stored document ID
+     * @return document if it exists
      */
     public Optional<Document> findDocument(long documentId) {
         requirePositiveDocumentId(documentId);
@@ -44,11 +54,11 @@ public final class DocumentCatalogWorkflow {
     /**
      * Deletes a document from the authoritative repository and
      * removes any matching entry from the derived search index.
-     *
      * The index cleanup also happens when the repository reports
      * that the document is already missing. This repairs a possible
      * stale index entry.
      *
+     * @param documentId stored document ID
      * @return true when a persisted document was deleted
      */
     public boolean deleteDocument(long documentId) {
@@ -64,9 +74,10 @@ public final class DocumentCatalogWorkflow {
     /**
      * Changes the user-visible document title and synchronizes the
      * derived search index.
-     *
      * The original source file is not modified.
      *
+     * @param documentId stored document ID
+     * @param newTitle new user-visible title
      * @return true when the persisted document existed
      */
     public boolean renameDocument(long documentId, String newTitle) {

@@ -18,6 +18,13 @@ public final class SearchIndexSynchronizer {
     private final SearchIndex searchIndex;
     private final DocumentIndexMapper documentIndexMapper;
 
+    /**
+     * Creates a search index synchronizer.
+     *
+     * @param documentRepository authoritative document repository
+     * @param searchIndex derived search index
+     * @param documentIndexMapper mapper from documents to indexed data
+     */
     public SearchIndexSynchronizer(
             DocumentRepository documentRepository,
             SearchIndex searchIndex,
@@ -29,7 +36,9 @@ public final class SearchIndexSynchronizer {
     }
 
     /**
-     * Adds or replaces one persisted document in the index.
+     * Adds or replaces a persisted document in the search index.
+     *
+     * @param document document to synchronize
      */
     public void indexDocument(Document document) {
         searchIndex.indexDocument(documentIndexMapper.map(document));
@@ -38,6 +47,7 @@ public final class SearchIndexSynchronizer {
     /**
      * Removes one document from the index.
      *
+     * @param documentId stored document ID
      * @return true when the document was indexed
      */
     public boolean removeDocument(long documentId) {
@@ -46,11 +56,9 @@ public final class SearchIndexSynchronizer {
 
     /**
      * Rebuilds the complete in-memory index from SQLite.
-     *
      * Documents are loaded and mapped before the current index is
      * cleared. A repository or mapping failure therefore leaves the
      * existing index untouched.
-     *
      * If indexing fails midway through rebuilding, the partial index
      * is cleared rather than exposed as a complete index.
      *

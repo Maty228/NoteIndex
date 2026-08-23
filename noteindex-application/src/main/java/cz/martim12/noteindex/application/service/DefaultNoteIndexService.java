@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Default implementation of the public NoteIndex application API.
- *
  * The service delegates individual use cases to application
  * workflows and owns the lifetime of the search runtime.
  */
@@ -31,6 +30,14 @@ public final class DefaultNoteIndexService implements NoteIndexService {
     private final SearchRuntime searchRuntime;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
+    /**
+     * Creates the default application service implementation.
+     *
+     * @param importWorkflow workflow responsible for importing documents
+     * @param searchWorkflow workflow responsible for searching documents
+     * @param catalogWorkflow workflow responsible for document management
+     * @param searchRuntime runtime resources owned by the service
+     */
     public DefaultNoteIndexService(
             DocumentImportWorkflow importWorkflow,
             DocumentSearchWorkflow searchWorkflow,

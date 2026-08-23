@@ -13,7 +13,6 @@ import java.util.Set;
 
 /**
  * Coordinates importing, persistence and search indexing.
- *
  * SQLite remains the authoritative data store. The persisted
  * document is indexed only after the repository successfully
  * saves it.
@@ -24,6 +23,13 @@ public final class DocumentImportWorkflow {
     private final DocumentRepository documentRepository;
     private final SearchIndexSynchronizer indexSynchronizer;
 
+    /**
+     * Creates an import workflow.
+     *
+     * @param importerRegistry registry of available document importers
+     * @param documentRepository repository used to store imported documents
+     * @param indexSynchronizer synchronizer for updating search index data
+     */
     public DocumentImportWorkflow(
             ImporterRegistry importerRegistry,
             DocumentRepository documentRepository,
@@ -35,7 +41,10 @@ public final class DocumentImportWorkflow {
     }
 
     /**
-     * Imports, stores and indexes one source file.
+     * Imports a source file, stores it and adds it to the search index.
+     *
+     * @param source source file to import
+     * @return persisted document
      */
     public Document importFile(Path source) {
         Objects.requireNonNull(source, "Source file must not be null");
@@ -53,6 +62,8 @@ public final class DocumentImportWorkflow {
 
     /**
      * Returns normalized extensions without leading dots.
+     *
+     * @return normalized supported extensions
      */
     public Set<String> supportedExtensions() {
         return Set.copyOf(importerRegistry.supportedExtensions());

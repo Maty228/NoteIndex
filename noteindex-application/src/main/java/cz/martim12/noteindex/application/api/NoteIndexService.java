@@ -17,8 +17,7 @@ import java.util.Set;
  * User-interface modules should use this interface rather than
  * accessing the individual infrastructure modules directly.
  */
-public interface NoteIndexService extends AutoCloseable{
-
+public interface NoteIndexService extends AutoCloseable {
     /**
      * Imports a file, stores the resulting document and makes it
      * available to the search index.
@@ -40,24 +39,29 @@ public interface NoteIndexService extends AutoCloseable{
 
     /**
      * Lists stored documents without loading their full contents.
+     *
+     * @return lightweight document summaries
      */
     List<DocumentSummary> listDocuments();
 
     /**
      * Loads one complete document.
+     *
+     * @param documentId document identifier
+     * @return document if it exists
      */
     Optional<Document> findDocument(long documentId);
 
     /**
      * Deletes a stored document and removes it from the index.
      *
+     * @param documentId stored document ID
      * @return true when a document was deleted
      */
     boolean deleteDocument(long documentId);
 
     /**
      * Changes the user-visible title of a stored document.
-     *
      * The original source file is not renamed or otherwise modified.
      *
      * @param documentId stored document ID
@@ -67,8 +71,9 @@ public interface NoteIndexService extends AutoCloseable{
     boolean renameDocument(long documentId, String newTitle);
 
     /**
-     * Returns normalized extensions accepted by the available
-     * importer plugins, without leading dots.
+     * Returns normalized extensions accepted by available importer plugins.
+     *
+     * @return supported extensions without leading dots
      */
     Set<String> supportedImportExtensions();
 
@@ -79,4 +84,3 @@ public interface NoteIndexService extends AutoCloseable{
     void close();
 
 }
-
