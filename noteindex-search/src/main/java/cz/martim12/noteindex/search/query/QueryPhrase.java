@@ -11,6 +11,12 @@ public record QueryPhrase (
         List<String> terms
 ) {
 
+    /**
+     * Creates a validated query phrase.
+     *
+     * @param terms normalized phrase terms
+     * @throws IllegalArgumentException if the phrase contains no terms
+     */
     public QueryPhrase {
         Objects.requireNonNull(terms, "Phrase terms must not be null");
 
@@ -33,6 +39,11 @@ public record QueryPhrase (
         terms = List.copyOf(terms);
     }
 
+    /**
+     * Returns the number of terms in the phrase.
+     *
+     * @return phrase length
+     */
     public int length() {
         return terms.size();
     }

@@ -11,6 +11,13 @@ public record FieldStatistics (
       long totalTokenCount
 ) {
 
+    /**
+     * Creates validated field statistics.
+     *
+     * @param documentsWithField number of documents containing the field
+     * @param totalTokenCount total analyzed tokens in the field
+     * @throws IllegalArgumentException if statistics values are invalid
+     */
     public FieldStatistics {
         if (documentsWithField < 0) {
             throw new IllegalArgumentException(
@@ -31,6 +38,11 @@ public record FieldStatistics (
         }
     }
 
+    /**
+     * Calculates the average number of tokens per document containing this field.
+     *
+     * @return average field length, or zero when no documents contain the field
+     */
     public double averageFieldLength() {
         if (documentsWithField == 0) {
             return 0.0;

@@ -25,6 +25,12 @@ public record SearchConfiguration (
         Bm25Parameters bm25Parameters,
         double phraseOccurrenceBonus
 ) {
+
+    /**
+     * Creates the default search configuration.
+     *
+     * @return default search configuration
+     */
     public static SearchConfiguration defaults() {
         return new SearchConfiguration(
                 List.of(FieldName.TITLE, FieldName.BODY),
@@ -34,6 +40,17 @@ public record SearchConfiguration (
         );
     }
 
+
+    /**
+     * Creates a validated search configuration.
+     *
+     * @param fields fields searched by retrieval and phrase matching
+     * @param fieldWeights BM25 weight assigned to every search field
+     * @param bm25Parameters BM25 tuning parameters
+     * @param phraseOccurrenceBonus score added for each phrase occurrence
+     * @throws NullPointerException if required values are null
+     * @throws IllegalArgumentException if fields, weights, or scoring parameters are invalid
+     */
     public SearchConfiguration {
         Objects.requireNonNull(
                 fields,
@@ -62,8 +79,6 @@ public record SearchConfiguration (
 
         Objects.requireNonNull(fieldWeights, "Field weights must not be null");
 
-        Map<FieldName, Double> copy = new LinkedHashMap<>();
-
         if (fieldWeights.size() != fields.size() || !fieldWeights.keySet().containsAll(fields)) {
             throw new IllegalArgumentException(
                     "Every search field must have exactly one weight"
@@ -90,7 +105,7 @@ public record SearchConfiguration (
 
         fieldWeights = Collections.unmodifiableMap(copiedWeights);
 
-        bm25Parameters = Objects.requireNonNull(bm25Parameters, "BM25 parameters must not be null");
+        Objects.requireNonNull(bm25Parameters, "BM25 parameters must not be null");
 
         if (!Double.isFinite(phraseOccurrenceBonus) || phraseOccurrenceBonus < 0.0) {
             throw new IllegalArgumentException(

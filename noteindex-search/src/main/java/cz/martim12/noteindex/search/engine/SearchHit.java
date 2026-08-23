@@ -2,7 +2,6 @@ package cz.martim12.noteindex.search.engine;
 
 /**
  * Lightweight ranked result produced by the search engine.
- *
  * The search module returns document IDs only. Document content
  * remains owned by the persistence layer.
  *
@@ -16,6 +15,15 @@ public record SearchHit (
         double phraseBoost
 ) {
 
+    /**
+     * Creates a validated search hit.
+     *
+     * @param documentId indexed document ID
+     * @param lexicalScore score produced by the ranking strategy
+     * @param phraseBoost additional score for exact phrase occurrences
+     * @throws IllegalArgumentException if the document ID is invalid or scores
+     *         are not non-negative finite values
+     */
     public SearchHit {
         if (documentId <= 0) {
             throw new IllegalArgumentException(
@@ -27,6 +35,11 @@ public record SearchHit (
         requireNonNegativeFinite(phraseBoost, "Phrase boost");
     }
 
+    /**
+     * Returns the combined relevance score.
+     *
+     * @return lexical score plus phrase boost
+     */
     public double score() {
         return lexicalScore + phraseBoost;
     }

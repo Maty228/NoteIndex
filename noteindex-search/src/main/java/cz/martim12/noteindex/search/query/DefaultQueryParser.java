@@ -10,7 +10,6 @@ import java.util.Set;
 
 /**
  * Parses standalone terms and phrases enclosed in double quotes.
- *
  * Examples:
  * java collections
  * "binary search tree"
@@ -20,10 +19,24 @@ public final class DefaultQueryParser implements QueryParser {
 
     private final TextAnalyzer analyzer;
 
+    /**
+     * Creates a query parser using the provided text analyzer.
+     *
+     * @param analyzer analyzer used to normalize query terms
+     */
     public DefaultQueryParser(TextAnalyzer analyzer) {
         this.analyzer = Objects.requireNonNull(analyzer, "Text analyzer must not be null");
     }
 
+    /**
+     * Parses raw user input into a normalized query representation.
+     *
+     * <p>Supports standalone terms and required phrases enclosed in quotes.</p>
+     *
+     * @param rawQuery user-provided query text
+     * @return parsed query
+     * @throws QueryParseException if the query contains invalid syntax
+     */
     @Override
     public ParsedQuery parse(CharSequence rawQuery) {
         Objects.requireNonNull(rawQuery, "Search query must not be null");

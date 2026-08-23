@@ -15,7 +15,10 @@ public final class SearchIndexes {
     }
 
     /**
-     * Creates a non-persistent search index stored in application memory.
+     * Creates a non-persistent in-memory search index.
+     *
+     * @param analyzer analyzer used for tokenizing indexed content
+     * @return new search index
      */
     public static SearchIndex inMemory(TextAnalyzer analyzer) {
         Objects.requireNonNull(analyzer, "Analyzer must not be null");

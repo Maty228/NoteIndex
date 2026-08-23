@@ -17,6 +17,14 @@ public record PhraseMatch (
         FieldName field,
         List<Integer> startPositions
 ) {
+    /**
+     * Creates a validated phrase match.
+     *
+     * @param documentId matching document ID
+     * @param field field containing the phrase
+     * @param startPositions token positions where the phrase begins
+     * @throws IllegalArgumentException if the document ID or positions are invalid
+     */
     public PhraseMatch {
         if (documentId <= 0) {
             throw new IllegalArgumentException(
@@ -63,6 +71,11 @@ public record PhraseMatch (
         startPositions = List.copyOf(startPositions);
     }
 
+    /**
+     * Returns the number of occurrences represented by this match.
+     *
+     * @return number of phrase occurrences
+     */
     public int occurrenceCount() {
         return startPositions.size();
     }

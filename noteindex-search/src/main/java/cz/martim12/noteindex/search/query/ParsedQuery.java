@@ -15,6 +15,13 @@ public record ParsedQuery (
         List<String> terms,
         List<QueryPhrase> requiredPhrases
 ){
+    /**
+     * Creates a validated parsed query.
+     *
+     * @param terms standalone ranked terms
+     * @param requiredPhrases exact phrases that results must contain
+     * @throws IllegalArgumentException if the query contains no searchable terms
+     */
     public ParsedQuery {
         Objects.requireNonNull(terms, "Query terms must not be null");
         Objects.requireNonNull(requiredPhrases, "Required phrases must not be null");
@@ -37,6 +44,8 @@ public record ParsedQuery (
 
     /**
      * Returns every distinct normalized term used by the query.
+     *
+     * @return distinct normalized query terms
      */
     public List<String> allTerms() {
         Set<String> allTerms = new LinkedHashSet<>(terms);
@@ -48,6 +57,11 @@ public record ParsedQuery (
         return List.copyOf(allTerms);
     }
 
+    /**
+     * Checks whether the query contains required phrases.
+     *
+     * @return true if at least one required phrase exists
+     */
     public boolean hasRequiredPhrases() {
         return !requiredPhrases.isEmpty();
     }

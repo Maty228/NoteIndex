@@ -23,10 +23,22 @@ public final class PositionalPhraseMatcher implements PhraseMatcher {
 
     private final IndexReader indexReader;
 
+    /**
+     * Creates a positional phrase matcher.
+     *
+     * @param indexReader source of positional index data
+     */
     public PositionalPhraseMatcher(IndexReader indexReader) {
         this.indexReader = Objects.requireNonNull(indexReader, "Index reader must not be null");
     }
 
+    /**
+     * Finds all occurrences of a phrase in the selected fields.
+     *
+     * @param phrase phrase to match
+     * @param fields searchable fields
+     * @return matching phrase occurrences
+     */
     @Override
     public List<PhraseMatch> findMatches(QueryPhrase phrase, Collection<FieldName> fields) {
         Objects.requireNonNull(phrase, "Query phrase must not be null");

@@ -6,7 +6,6 @@ import java.util.Objects;
 /**
  * A selected region of source text suitable for displaying
  * search-result context.
- *
  * The text is preserved exactly as it appeared in the source.
  *
  * @param text snippet text
@@ -25,6 +24,17 @@ public record Snippet(
         List<SnippetMatch> matches
 ) {
 
+    /**
+     * Creates a validated snippet.
+     *
+     * @param text snippet text
+     * @param sourceStartOffset inclusive start offset in source text
+     * @param sourceEndOffset exclusive end offset in source text
+     * @param truncatedAtStart whether source text exists before the snippet
+     * @param truncatedAtEnd whether source text exists after the snippet
+     * @param matches query matches in the complete source text
+     * @throws IllegalArgumentException if offsets do not match the snippet text
+     */
     public Snippet {
         Objects.requireNonNull(
                 text,
@@ -61,6 +71,12 @@ public record Snippet(
 
     /**
      * Compatibility constructor for snippets without match metadata.
+     *
+     * @param text snippet text
+     * @param sourceStartOffset inclusive start offset in source text
+     * @param sourceEndOffset exclusive end offset in source text
+     * @param truncatedAtStart whether source text exists before the snippet
+     * @param truncatedAtEnd whether source text exists after the snippet
      */
     public Snippet(
             String text,
@@ -79,6 +95,11 @@ public record Snippet(
         );
     }
 
+    /**
+     * Returns snippet text with truncation markers applied.
+     *
+     * @return display representation of the snippet
+     */
     public String displayText() {
         StringBuilder displayed = new StringBuilder();
 

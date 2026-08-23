@@ -14,6 +14,7 @@ public interface SnippetExtractor {
      * @param source source document text
      * @param query parsed search query
      * @param maximumLength preferred maximum character length
+     * @return extracted snippet
      */
     Snippet extract(CharSequence source, ParsedQuery query, int maximumLength);
 }

@@ -2,7 +2,6 @@ package cz.martim12.noteindex.search.snippet;
 
 /**
  * One query match in the original source text.
- *
  * Offsets use the same half-open convention as String.substring().
  */
 public record SnippetMatch(
@@ -10,6 +9,13 @@ public record SnippetMatch(
         int sourceEndOffset
 ) {
 
+    /**
+     * Creates a validated snippet match.
+     *
+     * @param sourceStartOffset inclusive start offset in source text
+     * @param sourceEndOffset exclusive end offset in source text
+     * @throws IllegalArgumentException if offsets are invalid
+     */
     public SnippetMatch {
         if (sourceStartOffset < 0) {
             throw new IllegalArgumentException(

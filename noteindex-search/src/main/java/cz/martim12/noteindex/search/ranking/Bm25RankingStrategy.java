@@ -13,7 +13,6 @@ import java.util.*;
 
 /**
  * Field-aware BM25 ranking strategy.
- *
  * Each configured field is scored independently and multiplied
  * by its assigned weight. Field scores are then added together.
  */
@@ -25,6 +24,7 @@ public final class Bm25RankingStrategy implements RankingStrategy {
     private final StandaloneTermMatchMode standaloneTermMatchMode;
 
     private static final double PREFIX_MATCH_WEIGHT = 0.85;
+
 
     public Bm25RankingStrategy(IndexReader indexReader, Map<FieldName, Double> fieldWeights) {
         this(
@@ -45,6 +45,14 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         );
     }
 
+    /**
+     * Creates a BM25 ranking strategy.
+     *
+     * @param indexReader source of index statistics and postings
+     * @param fieldWeights weights assigned to searchable fields
+     * @param parameters BM25 tuning parameters
+     * @param standaloneTermMatchMode matching mode for standalone terms
+     */
     public Bm25RankingStrategy(
             IndexReader indexReader, Map<FieldName, Double> fieldWeights, Bm25Parameters parameters, StandaloneTermMatchMode standaloneTermMatchMode) {
         this.indexReader = Objects.requireNonNull(
@@ -78,6 +86,13 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         );
     }
 
+    /**
+     * Calculates the BM25 relevance score for a document.
+     *
+     * @param documentId indexed document identifier
+     * @param query parsed query
+     * @return calculated relevance score
+     */
     @Override
     public double score(long documentId, ParsedQuery query) {
         if (documentId <= 0) {

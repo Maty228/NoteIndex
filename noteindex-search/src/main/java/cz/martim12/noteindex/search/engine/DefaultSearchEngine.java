@@ -37,6 +37,16 @@ public final class DefaultSearchEngine implements SearchEngine {
     private final List<FieldName> fields;
     private final double phraseOccurrenceBonus;
 
+    /**
+     * Creates a search engine using the provided search components.
+     *
+     * @param queryParser parser used to interpret queries
+     * @param candidateRetriever component used to find matching documents
+     * @param rankingStrategy strategy used to calculate relevance scores
+     * @param phraseMatcher matcher used for phrase searches
+     * @param fields searchable fields
+     * @param phraseOccurrenceBonus additional score for phrase occurrences
+     */
     public DefaultSearchEngine(
             QueryParser queryParser,
             CandidateRetriever candidateRetriever,
@@ -64,6 +74,14 @@ public final class DefaultSearchEngine implements SearchEngine {
         this.phraseOccurrenceBonus = phraseOccurrenceBonus;
     }
 
+    /**
+     * Executes a search query and returns ranked results.
+     *
+     * @param rawQuery user query text
+     * @param limit maximum number of results
+     * @return search hits ordered by relevance
+     * @throws IllegalArgumentException if the limit is not positive
+     */
     @Override
     public List<SearchHit> search(CharSequence rawQuery, int limit) {
         if (limit <= 0) {

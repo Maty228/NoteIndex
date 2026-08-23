@@ -16,13 +16,10 @@ import java.util.TreeSet;
 
 /**
  * Retrieves candidates using ranked-OR terms and required phrases.
- *
  * Standalone terms:
  *   candidates are the union of matching documents.
- *
  * Required phrases:
  *   candidates must match every phrase.
- *
  * In a mixed query, standalone terms are optional ranking signals,
  * while quoted phrases remain mandatory.
  */
@@ -47,6 +44,15 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
                 StandaloneTermMatchMode.EXACT
         );
     }
+
+    /**
+     * Creates a candidate retriever using the provided index and phrase matcher.
+     *
+     * @param indexReader source of indexed data
+     * @param phraseMatcher matcher for required phrases
+     * @param fields searchable fields
+     * @param standaloneTermMatchMode matching mode for standalone terms
+     */
     public DefaultCandidateRetriever(IndexReader indexReader, PhraseMatcher phraseMatcher, Collection<FieldName> fields, StandaloneTermMatchMode standaloneTermMatchMode) {
         this.indexReader = Objects.requireNonNull(
                 indexReader,
@@ -66,6 +72,15 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
         );
     }
 
+    /**
+     * Retrieves candidate documents for a parsed query.
+     *
+     * <p>Required phrases are treated as mandatory constraints while standalone
+     * terms provide optional candidate signals.</p>
+     *
+     * @param query parsed query
+     * @return candidate document IDs
+     */
     @Override
     public List<Long> retrieveCandidates(ParsedQuery query) {
         Objects.requireNonNull(query, "Parsed must not be null");

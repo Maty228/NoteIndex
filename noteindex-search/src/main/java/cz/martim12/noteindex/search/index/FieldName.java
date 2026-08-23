@@ -6,7 +6,6 @@ import java.util.regex.Pattern;
 
 /**
  * Identifies a searchable document field.
- *
  * Standard fields are provided, but custom fields can be created
  * for future document structures such as headings or formulas.
  */
@@ -19,6 +18,13 @@ public record FieldName(String value) {
 
 
 
+    /**
+     * Creates a validated field name.
+     *
+     * @param value field name value
+     * @throws NullPointerException if the value is null
+     * @throws IllegalArgumentException if the name format is invalid
+     */
     public FieldName {
         Objects.requireNonNull(value, "Field name must not be null");
 

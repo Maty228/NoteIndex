@@ -25,6 +25,11 @@ public final class SearchRuntimes {
 
     private SearchRuntimes() {}
 
+    /**
+     * Creates a default in-memory search runtime.
+     *
+     * @return configured search runtime
+     */
     public static SearchRuntime inMemory() {
         return inMemory(
                 new UnicodeTextAnalyzer(),
@@ -33,6 +38,12 @@ public final class SearchRuntimes {
         );
     }
 
+    /**
+     * Creates an in-memory search runtime with the provided configuration.
+     *
+     * @param configuration search configuration
+     * @return configured search runtime
+     */
     public static SearchRuntime inMemory(
             SearchConfiguration configuration
     ) {
@@ -42,6 +53,13 @@ public final class SearchRuntimes {
         );
     }
 
+    /**
+     * Creates an in-memory search runtime with a custom analyzer.
+     *
+     * @param analyzer text analyzer used for indexing and queries
+     * @param configuration search configuration
+     * @return configured search runtime
+     */
     public static SearchRuntime inMemory(
             TextAnalyzer analyzer,
             SearchConfiguration configuration
@@ -53,6 +71,13 @@ public final class SearchRuntimes {
         );
     }
 
+    /**
+     * Creates an in-memory search runtime with custom standalone term matching.
+     *
+     * @param configuration search configuration
+     * @param standaloneTermMatchMode matching mode for standalone terms
+     * @return configured search runtime
+     */
     public static SearchRuntime inMemory(
             SearchConfiguration configuration,
             StandaloneTermMatchMode standaloneTermMatchMode
@@ -64,6 +89,14 @@ public final class SearchRuntimes {
         );
     }
 
+    /**
+     * Creates a fully configured in-memory search runtime.
+     *
+     * @param analyzer analyzer shared by indexing and searching
+     * @param configuration search configuration
+     * @param standaloneTermMatchMode matching mode for standalone terms
+     * @return configured search runtime
+     */
     public static SearchRuntime inMemory(
             TextAnalyzer analyzer,
             SearchConfiguration configuration,

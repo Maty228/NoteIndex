@@ -11,7 +11,10 @@ import java.util.List;
 public interface CandidateRetriever {
 
     /**
-     * Returns candidate document IDs in ascending order.
+     * Returns document IDs that may satisfy the query.
+     *
+     * @param query parsed query
+     * @return candidate document IDs in ascending order
      */
     List<Long> retrieveCandidates(ParsedQuery query);
 }

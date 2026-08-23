@@ -18,11 +18,12 @@ import java.util.*;
 
 /**
  * Positional inverted index stored entirely in application memory.
-
- * Full document text is not retained. The index stores only terms,
- * document IDs, token positions and collection statistics.
+ *
+ * <p>The index stores terms, document IDs, token positions and collection
+ * statistics. Access is protected by read/write locking to allow concurrent
+ * reads while keeping updates consistent.</p>
  */
-public final class InMemorySearchIndex implements SearchIndex{
+public final class InMemorySearchIndex implements SearchIndex {
 
     private final TextAnalyzer analyzer;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -48,10 +49,20 @@ public final class InMemorySearchIndex implements SearchIndex{
 
     private final Map<FieldName, MutableFieldStatistics> statisticsByField = new HashMap<>();
 
+    /**
+     * Creates an empty in-memory search index.
+     *
+     * @param analyzer analyzer used to tokenize indexed content
+     */
     public InMemorySearchIndex(TextAnalyzer analyzer) {
         this.analyzer = Objects.requireNonNull(analyzer, "Analyzer must not be null");
     }
 
+    /**
+     * Adds or replaces a document in the index.
+     *
+     * @param document document to index
+     */
     @Override
     public void indexDocument(IndexDocument document) {
         Objects.requireNonNull(document, "Index document must not be null");
@@ -70,6 +81,13 @@ public final class InMemorySearchIndex implements SearchIndex{
         }
     }
 
+    /**
+     * Returns postings for a normalized term in a field.
+     *
+     * @param normalizedTerm normalized term to search for
+     * @param field field containing the term
+     * @return matching postings
+     */
     @Override
     public List<Posting> postings(String normalizedTerm, FieldName field) {
         requireTerm(normalizedTerm);
@@ -95,6 +113,13 @@ public final class InMemorySearchIndex implements SearchIndex{
         }
     }
 
+    /**
+     * Finds indexed terms beginning with the supplied prefix.
+     *
+     * @param normalizedPrefix normalized term prefix
+     * @param field field to search
+     * @return matching terms ordered by index order
+     */
     @Override
     public List<String> termsWithPrefix(
             String normalizedPrefix,
@@ -136,6 +161,12 @@ public final class InMemorySearchIndex implements SearchIndex{
         }
     }
 
+    /**
+     * Returns statistics for an indexed document.
+     *
+     * @param documentId document identifier
+     * @return document statistics if indexed
+     */
     @Override
     public Optional<DocumentStatistics> documentStatistics(long documentId) {
         requirePositiveDocumentId(documentId);
@@ -149,6 +180,12 @@ public final class InMemorySearchIndex implements SearchIndex{
         }
     }
 
+    /**
+     * Returns statistics for a searchable field.
+     *
+     * @param field field to inspect
+     * @return field statistics
+     */
     @Override
     public FieldStatistics fieldStatistics(FieldName field) {
         Objects.requireNonNull(field, "Field name must not be null");
@@ -168,6 +205,11 @@ public final class InMemorySearchIndex implements SearchIndex{
         }
     }
 
+    /**
+     * Returns the number of indexed documents.
+     *
+     * @return indexed document count
+     */
     @Override
     public long documentCount() {
         readLock.lock();
@@ -179,6 +221,12 @@ public final class InMemorySearchIndex implements SearchIndex{
         }
     }
 
+    /**
+     * Removes a document and all associated index data.
+     *
+     * @param documentId document identifier
+     * @return true if the document existed and was removed
+     */
     @Override
     public boolean removeDocument(long documentId) {
         requirePositiveDocumentId(documentId);
@@ -222,6 +270,9 @@ public final class InMemorySearchIndex implements SearchIndex{
         }
     }
 
+    /**
+     * Removes all indexed documents and statistics.
+     */
     @Override
     public void clear() {
         writeLock.lock();
@@ -267,7 +318,7 @@ public final class InMemorySearchIndex implements SearchIndex{
 
         for (AnalyzedToken token : tokens) {
             positionsByTerm
-                    .computeIfAbsent(token.term(), igonred -> new ArrayList<>())
+                    .computeIfAbsent(token.term(), ignored -> new ArrayList<>())
                     .add(token.position());
         }
 

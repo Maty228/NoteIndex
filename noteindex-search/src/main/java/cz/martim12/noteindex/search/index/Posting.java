@@ -5,7 +5,6 @@ import java.util.Objects;
 
 /**
  * Describes the positions of one term inside one document field.
- *
  * Positions are ordered, unique and zero-based.
  */
 public record Posting (
@@ -13,6 +12,13 @@ public record Posting (
         List<Integer> positions
 ){
 
+    /**
+     * Creates a validated posting.
+     *
+     * @param documentId indexed document ID
+     * @param positions ordered term positions in the document field
+     * @throws IllegalArgumentException if the document ID or positions are invalid
+     */
     public Posting {
         if (documentId <= 0) {
             throw new IllegalArgumentException(
@@ -51,6 +57,11 @@ public record Posting (
         positions = List.copyOf(positions);
     }
 
+    /**
+     * Returns how many times the term occurs in the document.
+     *
+     * @return number of stored positions
+     */
     public int termFrequency() {
         return positions.size();
     }

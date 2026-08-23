@@ -7,7 +7,6 @@ import cz.martim12.noteindex.search.query.QueryPhrase;
 import cz.martim12.noteindex.search.query.StandaloneTermMatchMode;
 
 import java.util.LinkedHashSet;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +15,6 @@ import java.util.Set;
 /**
  * Selects a context window containing the strongest concentration
  * of query matches.
- *
  * Exact phrase occurrences are preferred over standalone terms.
  */
 public final class ContextAwareSnippetExtractor implements SnippetExtractor {
@@ -24,6 +22,11 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
     private final TextAnalyzer analyzer;
     private final StandaloneTermMatchMode standaloneTermMatchMode;
 
+    /**
+     * Creates a snippet extractor using exact term matching.
+     *
+     * @param analyzer analyzer used to identify query matches
+     */
     public ContextAwareSnippetExtractor(TextAnalyzer analyzer) {
         this(
                 analyzer,
@@ -31,6 +34,12 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         );
     }
 
+    /**
+     * Creates a snippet extractor.
+     *
+     * @param analyzer analyzer used to tokenize source text
+     * @param standaloneTermMatchMode matching mode for standalone terms
+     */
     public ContextAwareSnippetExtractor(
             TextAnalyzer analyzer,
             StandaloneTermMatchMode standaloneTermMatchMode
@@ -46,6 +55,17 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         );
     }
 
+    /**
+     * Extracts the most relevant context window for a query.
+     *
+     * <p>Phrase matches are preferred over standalone term matches when selecting
+     * the snippet region.</p>
+     *
+     * @param source source document text
+     * @param query parsed query
+     * @param maximumLength preferred maximum snippet length
+     * @return extracted snippet
+     */
     @Override
     public Snippet extract(CharSequence source, ParsedQuery query, int maximumLength) {
         Objects.requireNonNull(source, "Source text must not be null");

@@ -9,6 +9,13 @@ package cz.martim12.noteindex.search.ranking;
 public record Bm25Parameters (double k1, double b) {
     public static final Bm25Parameters DEFAULT = new Bm25Parameters(1.2, 0.75);
 
+    /**
+     * Creates validated BM25 parameters.
+     *
+     * @param k1 term-frequency saturation parameter
+     * @param b document-length normalization parameter
+     * @throws IllegalArgumentException if parameters are outside supported ranges
+     */
     public Bm25Parameters {
         if (!Double.isFinite(k1) || k1 <= 0.0) {
             throw new IllegalArgumentException(

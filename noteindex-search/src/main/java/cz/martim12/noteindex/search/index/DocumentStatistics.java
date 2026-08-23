@@ -10,6 +10,13 @@ public record DocumentStatistics (
         long documentId,
         Map<FieldName, Integer> fieldLengths
 ) {
+    /**
+     * Creates validated document statistics.
+     *
+     * @param documentId indexed document ID
+     * @param fieldLengths analyzed token counts by field
+     * @throws IllegalArgumentException if the document ID or field lengths are invalid
+     */
     public DocumentStatistics {
         if (documentId <= 0) {
             throw new IllegalArgumentException(
@@ -41,11 +48,22 @@ public record DocumentStatistics (
         fieldLengths = Collections.unmodifiableMap(copy);
     }
 
+    /**
+     * Returns the token count for a field.
+     *
+     * @param field field to inspect
+     * @return field length, or zero when the field is not present
+     */
     public int fieldLength(FieldName field) {
         Objects.requireNonNull(field, "Field name must not be null");
         return fieldLengths.getOrDefault(field, 0);
     }
 
+    /**
+     * Returns the total number of tokens across all fields.
+     *
+     * @return total token count
+     */
     public long totalLength() {
         return fieldLengths.values()
                 .stream()

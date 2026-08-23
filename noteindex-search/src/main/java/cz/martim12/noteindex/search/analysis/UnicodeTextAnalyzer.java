@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 
 /**
  * Basic Unicode-aware analyzer used for both documents and queries.
- *
  * Letters, combining marks and numbers form tokens.
  * Punctuation and whitespace act as separators.
  */
@@ -18,6 +17,13 @@ public final class UnicodeTextAnalyzer implements TextAnalyzer {
     private static final Pattern TOKEN_PATTERN =
             Pattern.compile("[\\p{L}\\p{M}\\p{N}]+");
 
+    /**
+     * Analyzes text into normalized Unicode-aware tokens.
+     *
+     * @param text text to analyze
+     * @return immutable list of analyzed tokens ordered by position
+     * @throws NullPointerException if the text is null
+     */
     @Override
     public List<AnalyzedToken> analyze(CharSequence text) {
         Objects.requireNonNull(text, "Text must not be null");

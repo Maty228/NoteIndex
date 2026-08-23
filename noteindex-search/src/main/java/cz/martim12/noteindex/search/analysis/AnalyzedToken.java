@@ -16,6 +16,17 @@ public record AnalyzedToken (
         int startOffset,
         int endOffset
 ) {
+    /**
+     * Creates a validated analyzed token.
+     *
+     * @param term normalized searchable term
+     * @param position sequential token position, starting at zero
+     * @param startOffset start position in the original text, inclusive
+     * @param endOffset end position in the original text, exclusive
+     * @throws NullPointerException if the term is null
+     * @throws IllegalArgumentException if the term is blank, the position is negative,
+     *         or the offsets are invalid
+     */
     public AnalyzedToken {
         Objects.requireNonNull(term, "Term must not be null");
 

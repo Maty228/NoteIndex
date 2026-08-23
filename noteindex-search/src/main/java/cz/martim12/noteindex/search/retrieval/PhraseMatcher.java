@@ -12,8 +12,13 @@ import java.util.List;
 @FunctionalInterface
 public interface PhraseMatcher {
 
+
     /**
-     * Finds phrase occurrences in the selected searchable fields.
+     * Finds exact phrase occurrences in selected fields.
+     *
+     * @param phrase phrase to search for
+     * @param fields fields to inspect
+     * @return matching phrase occurrences
      */
     List<PhraseMatch> findMatches(QueryPhrase phrase, Collection<FieldName> fields);
 }
