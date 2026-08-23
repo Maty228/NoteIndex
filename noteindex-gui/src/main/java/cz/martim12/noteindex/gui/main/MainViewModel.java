@@ -30,17 +30,47 @@ import java.util.function.Consumer;
  */
 public final class MainViewModel implements AutoCloseable {
 
+    /**
+     * Available document library filters.
+     */
     public enum LibraryView {
+        /**
+         * Displays all available documents.
+         */
         ALL,
+        /**
+         * Displays only recently imported documents.
+         */
         RECENT,
+        /**
+         * Displays only plain text documents.
+         */
         TXT,
+        /**
+         * Displays only Markdown documents.
+         */
         MARKDOWN
     }
 
+    /**
+     * Available document sorting modes.
+     */
     public enum DocumentSort {
+        /**
+         * Sorts documents by import date with newest documents first.
+         */
         NEWEST,
+        /**
+         * Sorts documents by import date with oldest documents first.
+         */
         OLDEST,
+        /**
+         * Sorts documents alphabetically by title in ascending order.
+         */
         TITLE_ASCENDING,
+        /**
+         * Sorts documents alphabetically by title in descending order.
+         */
         TITLE_DESCENDING
     }
 
@@ -64,6 +94,11 @@ public final class MainViewModel implements AutoCloseable {
     private LibraryView libraryView = LibraryView.ALL;
     private DocumentSort documentSort = DocumentSort.NEWEST;
 
+    /**
+     * Creates the main window view model.
+     *
+     * @param service application service used for document operations
+     */
     public MainViewModel(NoteIndexService service) {
         this(service, createDefaultExecutor(), Platform::runLater);
     }
@@ -74,26 +109,56 @@ public final class MainViewModel implements AutoCloseable {
         this.uiExecutor = Objects.requireNonNull(uiExecutor, "UI executor must not be null");
     }
 
+    /**
+     * Returns the currently visible documents.
+     *
+     * @return read-only observable document list
+     */
     public ObservableList<DocumentSummary> visibleDocuments() {
         return FXCollections.unmodifiableObservableList(visibleDocuments);
     }
 
+    /**
+     * Returns the property containing the total number of documents.
+     *
+     * @return document count property
+     */
     public ReadOnlyIntegerProperty totalDocumentCountProperty() {
         return totalDocumentCount.getReadOnlyProperty();
     }
 
+    /**
+     * Returns the property containing the currently selected document.
+     *
+     * @return selected document property
+     */
     public ReadOnlyObjectProperty<Document> selectedDocumentProperty() {
         return selectedDocument.getReadOnlyProperty();
     }
 
+    /**
+     * Returns the property indicating whether the document library is loading.
+     *
+     * @return library loading state property
+     */
     public ReadOnlyBooleanProperty libraryLoadingProperty() {
         return libraryLoading.getReadOnlyProperty();
     }
 
+    /**
+     * Returns the property containing the latest operation error.
+     *
+     * @return error property
+     */
     public ReadOnlyObjectProperty<Throwable> errorProperty() {
         return error.getReadOnlyProperty();
     }
 
+    /**
+     * Reloads document summaries asynchronously.
+     *
+     * @return completion future for the refresh operation
+     */
     public CompletableFuture<Void> refresh() {
         ensureOpen();
 
@@ -131,6 +196,12 @@ public final class MainViewModel implements AutoCloseable {
         return result;
     }
 
+    /**
+     * Loads and selects a document asynchronously.
+     *
+     * @param summary document summary to select
+     * @return completion future for the selection operation
+     */
     public CompletableFuture<Void> selectDocument(DocumentSummary summary) {
         ensureOpen();
 
@@ -178,6 +249,12 @@ public final class MainViewModel implements AutoCloseable {
         return result;
     }
 
+    /**
+     * Deletes a document asynchronously.
+     *
+     * @param documentId identifier of the document to delete
+     * @return future containing whether deletion succeeded
+     */
     public CompletableFuture<Boolean> deleteDocument(long documentId) {
         ensureOpen();
 
@@ -222,6 +299,13 @@ public final class MainViewModel implements AutoCloseable {
         return result;
     }
 
+    /**
+     * Renames a document asynchronously.
+     *
+     * @param documentId document identifier
+     * @param newTitle new document title
+     * @return future containing whether rename succeeded
+     */
     public CompletableFuture<Boolean> renameDocument(
             long documentId,
             String newTitle
@@ -275,7 +359,11 @@ public final class MainViewModel implements AutoCloseable {
         return result;
     }
 
-
+    /**
+     * Changes the active library filter.
+     *
+     * @param view selected library view
+     */
     public void setLibraryView(LibraryView view) {
         ensureOpen();
 
@@ -283,6 +371,11 @@ public final class MainViewModel implements AutoCloseable {
         recomputeVisibleDocuments();
     }
 
+    /**
+     * Changes document sorting.
+     *
+     * @param documentSort selected sorting mode
+     */
     public void setDocumentSort(DocumentSort documentSort) {
         ensureOpen();
 
@@ -290,10 +383,20 @@ public final class MainViewModel implements AutoCloseable {
         recomputeVisibleDocuments();
     }
 
+    /**
+     * Returns the active library filter.
+     *
+     * @return current library view
+     */
     public LibraryView libraryView() {
         return libraryView;
     }
 
+    /**
+     * Returns the active document sorting mode.
+     *
+     * @return current sorting mode
+     */
     public DocumentSort documentSort() {
         return documentSort;
     }
@@ -349,6 +452,9 @@ public final class MainViewModel implements AutoCloseable {
         }
     }
 
+    /**
+     * Releases background resources used by this view model.
+     */
     @Override
     public void close() {
         if (!closed.compareAndSet(false, true)) {

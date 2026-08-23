@@ -7,6 +7,12 @@ import javafx.scene.Scene;
 
 import java.util.Objects;
 
+/**
+ * Manages application theme stylesheets and responds to theme changes.
+ *
+ * <p>The manager supports explicit light/dark themes as well as following
+ * the operating system color scheme.</p>
+ */
 public final class ThemeManager implements AutoCloseable {
     private final Scene scene;
     private final GuiPreferences preferences;
@@ -17,6 +23,14 @@ public final class ThemeManager implements AutoCloseable {
     private final ChangeListener<ThemePreference> themeListener;
     private final ChangeListener<ColorScheme> platformThemeListener;
 
+    /**
+     * Creates a theme manager.
+     *
+     * @param scene scene whose stylesheets are managed
+     * @param preferences GUI preferences containing theme selection
+     * @param lightStylesheet light theme stylesheet
+     * @param darkStylesheet dark theme stylesheet
+     */
     public ThemeManager(Scene scene, GuiPreferences preferences, String lightStylesheet, String darkStylesheet) {
         this.scene = Objects.requireNonNull(scene, "Scene must not be null");
         this.preferences = Objects.requireNonNull(preferences, "Preferences must not be null");
@@ -32,6 +46,9 @@ public final class ThemeManager implements AutoCloseable {
 
     }
 
+    /**
+     * Starts listening for theme preference changes and applies the current theme.
+     */
     public void start() {
         preferences.themeProperty().addListener(themeListener);
 
@@ -42,6 +59,9 @@ public final class ThemeManager implements AutoCloseable {
         applyTheme();
     }
 
+    /**
+     * Stops listening for theme changes and releases resources.
+     */
     @Override
     public void close() {
         preferences.themeProperty().removeListener(themeListener);

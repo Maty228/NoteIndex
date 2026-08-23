@@ -12,6 +12,9 @@ import javafx.scene.layout.VBox;
 
 import java.util.Objects;
 
+/**
+ * Modal pane displaying progress and results of document import operations.
+ */
 public final class ImportProgressPane {
     private final VBox root;
 
@@ -28,6 +31,12 @@ public final class ImportProgressPane {
 
     private Runnable closeAction = () -> {};
 
+    /**
+     * Creates an import progress pane.
+     *
+     * @param totalFiles number of files being imported
+     * @throws IllegalArgumentException if the total count is not positive
+     */
     public ImportProgressPane(int totalFiles) {
         if (totalFiles <= 0) {
             throw new IllegalArgumentException("Total file count must be positive");
@@ -79,10 +88,20 @@ public final class ImportProgressPane {
         root.getStyleClass().add("modal-card");
     }
 
+    /**
+     * Returns the root node of this pane.
+     *
+     * @return pane root
+     */
     public Parent root() {
         return root;
     }
 
+    /**
+     * Sets the action executed when the pane is closed.
+     *
+     * @param closeAction close action
+     */
     public void setOnClose(Runnable closeAction) {
         this.closeAction = Objects.requireNonNull(
                 closeAction,
@@ -90,6 +109,11 @@ public final class ImportProgressPane {
         );
     }
 
+    /**
+     * Updates the displayed import progress.
+     *
+     * @param progress current import progress
+     */
     public void update(ImportProgress progress) {
         summary.setText("Importing " + progress.current() + " of " + progress.total());
 
@@ -97,6 +121,11 @@ public final class ImportProgressPane {
         progressBar.setProgress(progress.fraction());
     }
 
+    /**
+     * Displays the final import result summary.
+     *
+     * @param result completed import result
+     */
     public void showResult(ImportBatchResult result) {
         int successful = result.importedDocuments().size();
         int failed = result.failures().size();

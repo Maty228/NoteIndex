@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Owns the application service and the background executor used
  * during GUI startup.
- *
  * Opening SQLite and rebuilding the search index must not block
  * the JavaFX Application Thread.
  */
@@ -36,6 +35,11 @@ public final class GuiApplicationContext implements AutoCloseable {
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
+    /**
+     * Creates a GUI application context.
+     *
+     * @param serviceFactory factory used to open application services
+     */
     public GuiApplicationContext(GuiServiceFactory serviceFactory) {
         this(serviceFactory, createDefaultExecutor());
     }
@@ -50,7 +54,13 @@ public final class GuiApplicationContext implements AutoCloseable {
     }
 
     /**
-     * Starts the application runtime once.
+     * Starts the GUI application runtime asynchronously.
+     *
+     * <p>Database initialization and service creation are performed outside
+     * the JavaFX application thread.</p>
+     *
+     * @param databaseFile database file location
+     * @return future completing with the opened service
      */
     public CompletableFuture<NoteIndexService> start(Path databaseFile) {
         Objects.requireNonNull(databaseFile, "Database file must not be null");
@@ -72,14 +82,29 @@ public final class GuiApplicationContext implements AutoCloseable {
         return future;
     }
 
+    /**
+     * Returns the current lifecycle state.
+     *
+     * @return current GUI lifecycle state
+     */
     public GuiLifecycleState state() {
         return state.get();
     }
 
+    /**
+     * Returns the opened application service if startup completed.
+     *
+     * @return optional application service
+     */
     public Optional<NoteIndexService> service() {
         return Optional.ofNullable(service.get());
     }
 
+    /**
+     * Returns the configured database file if startup has started.
+     *
+     * @return optional database path
+     */
     public Optional<Path> databaseFile() {
         return Optional.ofNullable(databaseFile.get());
     }
@@ -137,6 +162,9 @@ public final class GuiApplicationContext implements AutoCloseable {
         }
     }
 
+    /**
+     * Closes the GUI runtime and releases owned resources.
+     */
     @Override
     public void close() {
         if (!closed.compareAndSet(false, true)) {

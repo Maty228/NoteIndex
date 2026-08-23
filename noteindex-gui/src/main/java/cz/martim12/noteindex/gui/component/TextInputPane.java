@@ -14,10 +14,23 @@ import javafx.scene.layout.VBox;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+/**
+ * Modal content pane for editing a single text value.
+ */
 public final class TextInputPane {
 
     private final VBox root;
 
+    /**
+     * Creates a text input pane.
+     *
+     * @param caption modal caption
+     * @param title modal title
+     * @param initialValue initial input value
+     * @param confirmText confirmation button text
+     * @param cancelAction action executed when cancelled
+     * @param confirmAction action executed with the entered value
+     */
     public TextInputPane(String caption, String title, String initialValue, String confirmText, Runnable cancelAction, Consumer<String> confirmAction) {
 
         Objects.requireNonNull(initialValue, "Initial value must not be null");
@@ -83,6 +96,11 @@ public final class TextInputPane {
         });
     }
 
+    /**
+     * Returns the root node of this pane.
+     *
+     * @return pane root
+     */
     public Parent root() {
         return root;
     }

@@ -9,10 +9,24 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.util.Objects;
+
+/**
+ * Modal content pane displaying a confirmation action.
+ */
 public final class ConfirmationPane {
 
     private final VBox root;
 
+    /**
+     * Creates a confirmation pane.
+     *
+     * @param caption small modal caption
+     * @param title modal title
+     * @param message confirmation message
+     * @param confirmText text displayed on the confirmation button
+     * @param cancelAction action executed when cancellation is requested
+     * @param confirmAction action executed when confirmation is accepted
+     */
     public ConfirmationPane(String caption, String title, String message, String confirmText, Runnable cancelAction, Runnable confirmAction) {
         Objects.requireNonNull(cancelAction, "Cancel action must not be null");
         Objects.requireNonNull(confirmAction, "Confirm action must not be null");
@@ -53,6 +67,11 @@ public final class ConfirmationPane {
         root.getStyleClass().add("modal-card");
     }
 
+    /**
+     * Returns the root node of this pane.
+     *
+     * @return pane root
+     */
     public Parent root() {
         return root;
     }

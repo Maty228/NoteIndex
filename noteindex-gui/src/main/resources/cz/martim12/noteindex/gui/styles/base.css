@@ -147,7 +147,7 @@
 }
 
 .welcome-description {
-    -fs-font-size: 14px;
+    -fx-font-size: 14px;
     -fx-line-spacing: 3px;
 }
 

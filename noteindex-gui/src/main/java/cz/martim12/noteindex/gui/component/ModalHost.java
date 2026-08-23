@@ -6,11 +6,18 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
 import java.util.Objects;
+
+/**
+ * Container responsible for displaying modal content above the main view.
+ */
 public final class ModalHost {
 
     private final StackPane root = new StackPane();
     private final StackPane contentHost = new StackPane();
 
+    /**
+     * Creates an empty modal host.
+     */
     public ModalHost() {
         root.getStyleClass().add("modal-layer");
         contentHost.getStyleClass().add("modal-content-host");
@@ -25,10 +32,20 @@ public final class ModalHost {
         hide();
     }
 
+    /**
+     * Returns the root node of this modal host.
+     *
+     * @return modal host root
+     */
     public Parent root() {
         return root;
     }
 
+    /**
+     * Displays modal content.
+     *
+     * @param content node to display as modal content
+     */
     public void show(Node content) {
         contentHost.getChildren().setAll(Objects.requireNonNull(content, "Modal content must not be null"));
 
@@ -37,6 +54,9 @@ public final class ModalHost {
         root.toFront();
     }
 
+    /**
+     * Hides the currently displayed modal content.
+     */
     public void hide() {
         root.setVisible(false);
         root.setManaged(false);
@@ -44,6 +64,11 @@ public final class ModalHost {
         contentHost.getChildren().clear();
     }
 
+    /**
+     * Checks whether modal content is currently visible.
+     *
+     * @return true if a modal is shown
+     */
     public boolean isShowing() {
         return root.isVisible();
     }

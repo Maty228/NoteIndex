@@ -15,6 +15,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+/**
+ * JavaFX list cell displaying ranked search results with highlighted snippets.
+ */
 public final class SearchResultCell extends ListCell<SearchResult>{
 
     private static final int MAX_SNIPPET_CHARACTERS = 105;
@@ -31,6 +34,9 @@ public final class SearchResultCell extends ListCell<SearchResult>{
 
     private final VBox content = new VBox(5, title, snippet, metadata);
 
+    /**
+     * Creates a search result cell.
+     */
     public SearchResultCell() {
         title.getStyleClass().add("search-result-title");
 

@@ -20,6 +20,9 @@ import javafx.util.StringConverter;
 import java.nio.file.Path;
 import java.util.Objects;
 
+/**
+ * JavaFX view displaying application settings and information.
+ */
 public final class SettingsView {
 
     private final BorderPane root = new BorderPane();
@@ -27,6 +30,13 @@ public final class SettingsView {
 
     private Runnable closeAction = () -> {};
 
+    /**
+     * Creates a settings view.
+     *
+     * @param preferences GUI preference storage
+     * @param databaseFile current database location
+     * @param documentCount observable document count
+     */
     public SettingsView(GuiPreferences preferences, Path databaseFile, ReadOnlyIntegerProperty documentCount) {
 
         Objects.requireNonNull(preferences, "Preferences must not be null");
@@ -55,18 +65,34 @@ public final class SettingsView {
         root.setCenter(scrollPane);
     }
 
+    /**
+     * Returns the root node of this settings view.
+     *
+     * @return settings view root
+     */
     public Parent root() {
         return root;
     }
 
+    /**
+     * Sets the action executed when leaving the settings view.
+     *
+     * @param closeAction action invoked when closing settings
+     */
     public void setOnClose(Runnable closeAction) {
         this.closeAction = Objects.requireNonNull(closeAction, "Close action must not be null");
     }
 
+    /**
+     * Scrolls the settings view to the top.
+     */
     public void showTop() {
         Platform.runLater(() -> scrollPane.setVvalue(0));
     }
 
+    /**
+     * Scrolls the settings view to the about section.
+     */
     public void showAbout() {
         Platform.runLater(() -> scrollPane.setVvalue(1));
     }

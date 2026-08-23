@@ -28,10 +28,25 @@ import java.util.concurrent.ExecutionException;
  * JavaFX entry point for the NoteIndex desktop application.
  */
 public final class NoteIndexGui extends Application {
+
+    /**
+     * Default application window width.
+     */
     public static final double DEFAULT_WIDTH = 1280;
+
+    /**
+     * Default application window height.
+     */
     public static final double DEFAULT_HEIGHT = 800;
 
+    /**
+     * Minimum allowed application window width.
+     */
     public static final double MINIMUM_WIDTH = 900;
+
+    /**
+     * Minimum allowed application window height.
+     */
     public static final double MINIMUM_HEIGHT = 600;
 
     private GuiApplicationContext applicationContext;
@@ -44,6 +59,9 @@ public final class NoteIndexGui extends Application {
     private MainViewModel mainViewModel;
     private MainWindow mainWindow;
 
+    /**
+     * Initializes GUI-level services before the JavaFX application starts.
+     */
     @Override
     public void init() {
         guiPreferences = new GuiPreferences();
@@ -51,6 +69,14 @@ public final class NoteIndexGui extends Application {
         applicationContext = new GuiApplicationContext(NoteIndexApplications::open);
     }
 
+    /**
+     * Starts the JavaFX user interface.
+     *
+     * <p>Creates the main window, initializes themes and asynchronously opens
+     * the application database.</p>
+     *
+     * @param primaryStage primary JavaFX stage
+     */
     @Override
     public void start(Stage primaryStage) {
         mainWindow = new MainWindow();
@@ -146,6 +172,9 @@ public final class NoteIndexGui extends Application {
         }
     }
 
+    /**
+     * Stops the application and releases owned resources.
+     */
     @Override
     public void stop() {
         if (themeManager != null) {
@@ -169,6 +198,11 @@ public final class NoteIndexGui extends Application {
         }
     }
 
+    /**
+     * Launches the NoteIndex JavaFX application.
+     *
+     * @param arguments application arguments
+     */
     public static void main(String[] arguments) {
         launch(arguments);
     }

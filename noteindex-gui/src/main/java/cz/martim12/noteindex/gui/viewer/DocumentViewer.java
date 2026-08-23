@@ -27,6 +27,12 @@ import java.util.List;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * JavaFX component displaying document metadata and content.
+ *
+ * <p>Supports switching between highlighted preview mode and original
+ * source content mode.</p>
+ */
 public final class DocumentViewer {
 
     private static final DateTimeFormatter DATE_FORMATTER =
@@ -61,6 +67,9 @@ public final class DocumentViewer {
 
     private Document document;
 
+    /**
+     * Creates an empty document viewer.
+     */
     public DocumentViewer() {
         root.getStyleClass().add("document-viewer");
 
@@ -124,10 +133,20 @@ public final class DocumentViewer {
         showEmpty();
     }
 
+    /**
+     * Returns the root node of this viewer.
+     *
+     * @return viewer root
+     */
     public Parent root() {
         return root;
     }
 
+    /**
+     * Displays a document without search highlighting.
+     *
+     * @param document document to display
+     */
     public void showDocument(Document document) {
         showDocument(
                 document,
@@ -135,6 +154,12 @@ public final class DocumentViewer {
         );
     }
 
+    /**
+     * Displays a document with optional highlighted ranges.
+     *
+     * @param document document to display
+     * @param highlights ranges to highlight in the preview
+     */
     public void showDocument(
             Document document,
             List<HighlightRange> highlights
@@ -163,6 +188,9 @@ public final class DocumentViewer {
         renderContent();
     }
 
+    /**
+     * Removes all currently displayed search highlights.
+     */
     public void clearHighlights() {
         highlights = List.of();
 
@@ -176,6 +204,9 @@ public final class DocumentViewer {
         }
     }
 
+    /**
+     * Clears the viewer and displays an empty document state.
+     */
     public void showEmpty() {
         document = null;
 

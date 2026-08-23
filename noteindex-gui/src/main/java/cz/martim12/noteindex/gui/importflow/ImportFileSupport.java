@@ -10,10 +10,18 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Provides helper operations for validating files selected for import.
+ */
 public final class ImportFileSupport {
 
     private final Set<String> supportedExtensions;
 
+    /**
+     * Creates file support utilities.
+     *
+     * @param supportedExtensions supported file extensions
+     */
     public ImportFileSupport(Set<String> supportedExtensions) {
         Objects.requireNonNull(supportedExtensions, "Supported extensions must not be null");
 
@@ -23,6 +31,12 @@ public final class ImportFileSupport {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    /**
+     * Checks whether a file can be imported.
+     *
+     * @param path file path to check
+     * @return true if the file has a supported format
+     */
     public boolean isSupported(Path path) {
         Objects.requireNonNull(path, "Path must not be null");
 
@@ -35,12 +49,24 @@ public final class ImportFileSupport {
         return !extension.isBlank() && supportedExtensions.contains(extension);
     }
 
+    /**
+     * Checks whether a collection contains at least one supported file.
+     *
+     * @param paths files to inspect
+     * @return true if a supported file exists
+     */
     public boolean containsSupportedFile(List<Path> paths) {
         Objects.requireNonNull(paths, "Paths must not be null");
 
         return paths.stream().anyMatch(this::isSupported);
     }
 
+    /**
+     * Returns normalized regular files from the provided paths.
+     *
+     * @param paths paths to filter
+     * @return valid regular files
+     */
     public List<Path> regularFiles(List<Path> paths) {
         Objects.requireNonNull(paths, "Paths must not be null");
 
@@ -52,6 +78,11 @@ public final class ImportFileSupport {
                 .toList();
     }
 
+    /**
+     * Returns a display label of supported import formats.
+     *
+     * @return formatted extension list
+     */
     public String supportedFormatsLabel() {
         return supportedExtensions.stream()
                 .sorted(Comparator.comparingInt(ImportFileSupport::formatPriority)

@@ -8,11 +8,27 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import java.util.List;
 import java.util.Objects;
 import java.util.prefs.Preferences;
+
+/**
+ * Stores and exposes user interface preferences.
+ *
+ * <p>Preferences are persisted using {@link Preferences} and exposed through
+ * JavaFX properties for UI binding.</p>
+ */
 public final class GuiPreferences {
 
+    /**
+     * Default theme used when no preference has been stored.
+     */
     public static final ThemePreference DEFAULT_THEME = ThemePreference.SYSTEM;
+    /**
+     * Default maximum number of search results displayed.
+     */
     public static final int DEFAULT_SEARCH_RESULT_LIMIT = 50;
 
+    /**
+     * Supported search result limit values.
+     */
     public static final List<Integer> SEARCH_RESULT_LIMITS = List.of(10, 25, 50, 100, 200);
 
     private static final String THEME_KEY = "theme";
@@ -23,6 +39,9 @@ public final class GuiPreferences {
     private final ReadOnlyObjectWrapper<ThemePreference> theme = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyIntegerWrapper searchResultLimit = new ReadOnlyIntegerWrapper();
 
+    /**
+     * Creates GUI preferences backed by the application preference store.
+     */
     public GuiPreferences() {
         this(Preferences.userNodeForPackage(GuiPreferences.class).node("settings"));
     }
@@ -35,14 +54,29 @@ public final class GuiPreferences {
 
     }
 
+    /**
+     * Returns the currently selected theme preference.
+     *
+     * @return current theme
+     */
     public ThemePreference theme() {
         return theme.get();
     }
 
+    /**
+     * Returns the observable theme preference property.
+     *
+     * @return theme property
+     */
     public ReadOnlyObjectProperty<ThemePreference> themeProperty() {
         return theme.getReadOnlyProperty();
     }
 
+    /**
+     * Updates and persists the selected theme.
+     *
+     * @param theme new theme preference
+     */
     public void setTheme(ThemePreference theme) {
         ThemePreference value = Objects.requireNonNull(theme, "Theme must not be null");
 
@@ -50,14 +84,30 @@ public final class GuiPreferences {
         preferences.put(THEME_KEY, value.name());
     }
 
+    /**
+     * Returns the configured search result limit.
+     *
+     * @return maximum number of results
+     */
     public int searchResultLimit() {
         return searchResultLimit.get();
     }
 
+    /**
+     * Returns the observable search result limit property.
+     *
+     * @return result limit property
+     */
     public ReadOnlyIntegerProperty searchResultLimitProperty() {
         return searchResultLimit.getReadOnlyProperty();
     }
 
+    /**
+     * Updates and persists the search result limit.
+     *
+     * @param limit new result limit
+     * @throws IllegalArgumentException if the limit is unsupported
+     */
     public void setSearchResultLimit(int limit) {
         if (!SEARCH_RESULT_LIMITS.contains(limit)) {
             throw new IllegalArgumentException(

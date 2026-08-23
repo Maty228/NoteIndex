@@ -9,6 +9,11 @@ public final class GuiDatabasePaths {
 
     private GuiDatabasePaths() {}
 
+    /**
+     * Returns the default GUI database location.
+     *
+     * @return default SQLite database path
+     */
     public static Path defaultDatabaseFile() {
         String userHome = System.getProperty("user.home");
 

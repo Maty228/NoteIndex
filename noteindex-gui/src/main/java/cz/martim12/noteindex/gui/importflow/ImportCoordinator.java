@@ -17,8 +17,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
- * Coordinates sequential document imports outside the JavaFX
- * Application Thread.
+ * Coordinates sequential document imports outside the JavaFX thread.
+ *
+ * <p>Progress updates are delivered back through the configured UI executor.</p>
  */
 public final class ImportCoordinator implements AutoCloseable {
     private final NoteIndexService service;
@@ -28,6 +29,11 @@ public final class ImportCoordinator implements AutoCloseable {
     private final AtomicBoolean importing = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
 
+    /**
+     * Creates an import coordinator.
+     *
+     * @param service application service used for importing documents
+     */
     public ImportCoordinator(NoteIndexService service) {
         this(service, createDefaultExecutor(), Platform::runLater);
     }
@@ -38,12 +44,24 @@ public final class ImportCoordinator implements AutoCloseable {
         this.uiExecutor = Objects.requireNonNull(uiExecutor, "UI executor must not be null");
     }
 
+    /**
+     * Returns supported import extensions.
+     *
+     * @return supported extensions
+     */
     public Set<String> supportedExtensions() {
         ensureOpen();
         return Set.copyOf(service.supportedImportExtensions());
 
     }
 
+    /**
+     * Imports multiple files asynchronously.
+     *
+     * @param sources files to import
+     * @param progressConsumer receives progress updates
+     * @return future containing import results
+     */
     public CompletableFuture<ImportBatchResult> importFiles(List<Path> sources, Consumer<ImportProgress> progressConsumer) {
         ensureOpen();
 
@@ -89,10 +107,18 @@ public final class ImportCoordinator implements AutoCloseable {
         }, executor).whenComplete((result, failure) -> importing.set(false));
     }
 
+    /**
+     * Checks whether an import operation is currently running.
+     *
+     * @return true if importing
+     */
     public boolean isImporting() {
         return importing.get();
     }
 
+    /**
+     * Stops background import processing and releases resources.
+     */
     @Override
     public void close() {
         if (!closed.compareAndSet(false, true)) {

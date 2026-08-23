@@ -10,11 +10,21 @@ import javafx.scene.layout.VBox;
 
 import java.util.Objects;
 
-
+/**
+ * Modal content pane displaying an informational message.
+ */
 public final class MessagePane {
 
     private final VBox root;
 
+    /**
+     * Creates a message pane.
+     *
+     * @param caption small modal caption
+     * @param title modal title
+     * @param message message content
+     * @param closeAction action executed when the dialog is closed
+     */
     public MessagePane(String caption, String title, String message, Runnable closeAction) {
         Objects.requireNonNull(closeAction, "Close action must not be null");
 
@@ -49,6 +59,12 @@ public final class MessagePane {
         root.setMaxSize(460, Region.USE_PREF_SIZE);
         root.getStyleClass().add("modal-card");
     }
+
+    /**
+     * Returns the root node of this pane.
+     *
+     * @return pane root
+     */
     public Parent root() {
         return root;
     }

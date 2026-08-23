@@ -25,6 +25,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+/**
+ * Coordinates asynchronous document searching for the GUI.
+ *
+ * <p>Search requests are debounced, executed outside the JavaFX thread,
+ * and only the latest request is allowed to update observable state.</p>
+ */
 public final class SearchCoordinator implements AutoCloseable {
 
     private static final int DEFAULT_RESULT_LIMIT = 50;
@@ -45,9 +51,15 @@ public final class SearchCoordinator implements AutoCloseable {
     private final AtomicLong generation = new AtomicLong();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicReference<ScheduledFuture<?>> pendingSearch = new AtomicReference<>();
+    private final AtomicReference<CompletableFuture<Void>> pendingCompletion = new AtomicReference<>();
 
     private final ReadOnlyBooleanWrapper unfinishedQuotedPhrase = new ReadOnlyBooleanWrapper(false);
 
+    /**
+     * Creates a search coordinator using default background execution settings.
+     *
+     * @param service application service used to execute searches
+     */
     public SearchCoordinator(NoteIndexService service) {
         this(
                 service,
@@ -81,20 +93,42 @@ public final class SearchCoordinator implements AutoCloseable {
         this.resultLimit = resultLimit;
     }
 
+    /**
+     * Returns the observable search results.
+     *
+     * @return read-only observable result list
+     */
     public ObservableList<SearchResult> results() {
         return FXCollections.unmodifiableObservableList(results);
     }
 
-
-
+    /**
+     * Returns the property indicating whether a search is running.
+     *
+     * @return searching state property
+     */
     public ReadOnlyBooleanProperty searchingProperty() {
         return searching.getReadOnlyProperty();
     }
 
+    /**
+     * Returns the property containing the latest search failure.
+     *
+     * @return error property
+     */
     public ReadOnlyObjectProperty<Throwable> errorProperty() {
         return error.getReadOnlyProperty();
     }
 
+    /**
+     * Starts a debounced asynchronous search.
+     *
+     * <p>Blank queries clear results. Requests superseded by newer searches
+     * do not update the UI state.</p>
+     *
+     * @param queryText search text
+     * @return completion future for the search operation
+     */
     public CompletableFuture<Void> search(String queryText) {
         ensureOpen();
         Objects.requireNonNull(queryText, "Query text must not be null");
@@ -146,7 +180,8 @@ public final class SearchCoordinator implements AutoCloseable {
             return completion;
         }
 
-        CompletableFuture<Void> completion =  new CompletableFuture<>();
+        CompletableFuture<Void> completion = new CompletableFuture<>();
+        pendingCompletion.set(completion);
 
         uiExecutor.accept(() -> {
             if (closed.get() || generation.get() != currentGeneration) {
@@ -160,16 +195,6 @@ public final class SearchCoordinator implements AutoCloseable {
             unfinishedQuotedPhrase.set(false);
         });
 
-        uiExecutor.accept(() -> {
-            if (closed.get() || generation.get() != currentGeneration) {
-                completion.complete(null);
-                return;
-            }
-
-            query.set(queryText);
-            error.set(null);
-            searching.set(true);
-        });
 
         ScheduledFuture<?> scheduled = executor.schedule(
                 () -> executeSearch(queryText, currentGeneration, completion),
@@ -182,6 +207,9 @@ public final class SearchCoordinator implements AutoCloseable {
         return completion;
     }
 
+    /**
+     * Clears the current search query and results.
+     */
     public void clear() {
         search("");
     }
@@ -197,6 +225,7 @@ public final class SearchCoordinator implements AutoCloseable {
 
             uiExecutor.accept(() -> {
                 if (closed.get() || generation.get() != currentGeneration) {
+                    pendingCompletion.compareAndSet(completion, null);
                     completion.complete(null);
                     return;
                 }
@@ -205,12 +234,14 @@ public final class SearchCoordinator implements AutoCloseable {
                 error.set(null);
                 searching.set(false);
 
+                pendingCompletion.compareAndSet(completion, null);
                 completion.complete(null);
             });
 
         } catch (RuntimeException exception) {
             uiExecutor.accept(() -> {
                 if (closed.get() || generation.get() != currentGeneration) {
+                    pendingCompletion.compareAndSet(completion, null);
                     completion.complete(null);
                     return;
                 }
@@ -224,10 +255,16 @@ public final class SearchCoordinator implements AutoCloseable {
         }
     }
     private void cancelPendingSearch() {
-        ScheduledFuture<?> scheduled = pendingSearch.getAndSet(null);
+        ScheduledFuture<?> pending = pendingSearch.getAndSet(null);
 
-        if (scheduled != null && !scheduled.isDone()) {
-            scheduled.cancel(false);
+        if (pending != null) {
+            pending.cancel(false);
+        }
+
+        CompletableFuture<Void> completion = pendingCompletion.getAndSet(null);
+
+        if (completion != null && !completion.isDone()) {
+            completion.cancel(false);
         }
     }
 
@@ -237,6 +274,9 @@ public final class SearchCoordinator implements AutoCloseable {
         }
     }
 
+    /**
+     * Stops background searching and releases executor resources.
+     */
     @Override
     public void close() {
         if (!closed.compareAndSet(false, true)) {
@@ -257,10 +297,21 @@ public final class SearchCoordinator implements AutoCloseable {
         });
     }
 
+    /**
+     * Returns the maximum number of search results.
+     *
+     * @return result limit
+     */
     public int resultLimit() {
         return resultLimit;
     }
 
+    /**
+     * Updates the maximum number of search results.
+     *
+     * @param resultLimit maximum number of results
+     * @throws IllegalArgumentException if the limit is not positive
+     */
     public void setResultLimit(int resultLimit) {
         if (resultLimit <= 0) {
             throw new IllegalArgumentException("Result limit must be positive");
@@ -281,6 +332,12 @@ public final class SearchCoordinator implements AutoCloseable {
         return quoted;
     }
 
+    /**
+     * Returns the property indicating whether the current query contains
+     * an unfinished quoted phrase.
+     *
+     * @return unfinished quote state property
+     */
     public ReadOnlyBooleanProperty unfinishedQuotedPhraseProperty() {
         return unfinishedQuotedPhrase.getReadOnlyProperty();
     }

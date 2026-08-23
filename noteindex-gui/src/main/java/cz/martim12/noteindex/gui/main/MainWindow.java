@@ -54,7 +54,11 @@ import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 /**
- * Main NoteIndex workspace.
+ * Main JavaFX workspace containing navigation, document browsing,
+ * searching, importing and document viewing functionality.
+ *
+ * <p>The window coordinates the main GUI components and connects them
+ * with application view models and asynchronous workflows.</p>
  */
 public final class MainWindow {
 
@@ -133,6 +137,9 @@ public final class MainWindow {
 
     private boolean sidebarVisible = true;
 
+    /**
+     * Creates the main application window and initializes the GUI layout.
+     */
     public MainWindow() {
         root = new BorderPane();
         root.getStyleClass().add("app-root");
@@ -196,6 +203,11 @@ public final class MainWindow {
         hideDropOverlay();
     }
 
+    /**
+     * Returns the root node of this window.
+     *
+     * @return root JavaFX node
+     */
     public Parent root(){
         return windowStack;
     }
@@ -203,6 +215,8 @@ public final class MainWindow {
     /**
      * Displays the startup state while SQLite is opened and the
      * search index is rebuilt.
+     *
+     * @param databaseFile SQLite database file being opened
      */
     public void showStarting(Path databaseFile) {
         startupTitle.setText("Opening your library…");
@@ -220,6 +234,8 @@ public final class MainWindow {
 
     /**
      * Marks application startup as complete.
+     *
+     * @param databaseFile opened SQLite database file
      */
     public void showReady(Path databaseFile) {
         hideStartupOverlay();
@@ -236,6 +252,9 @@ public final class MainWindow {
     /**
      * Displays a non-interactive failure state behind the fatal
      * startup dialog.
+     *
+     * @param databaseFile SQLite database file that could not be opened
+     * @param failure startup failure
      */
     public void showStartupFailure(Path databaseFile, Throwable failure) {
         startupProgress.setVisible(false);
@@ -261,6 +280,14 @@ public final class MainWindow {
         setStatus("Library unavailable", "status-dot-error");
     }
 
+    /**
+     * Connects this window to the main application view model.
+     *
+     * <p>The view model provides document data, selection state and
+     * asynchronous document operations.</p>
+     *
+     * @param viewModel application view model
+     */
     public void connect(MainViewModel viewModel) {
         this.viewModel = viewModel;
 
@@ -412,6 +439,11 @@ public final class MainWindow {
         }
     }
 
+    /**
+     * Connects the window to the import workflow.
+     *
+     * @param importCoordinator coordinator responsible for importing files
+     */
     public void connectImport(ImportCoordinator importCoordinator) {
         this.importCoordinator = importCoordinator;
 
@@ -579,6 +611,11 @@ public final class MainWindow {
         dropOverlay.setManaged(false);
     }
 
+    /**
+     * Connects the window to the asynchronous search workflow.
+     *
+     * @param searchCoordinator coordinator responsible for searching documents
+     */
     public void connectSearch(SearchCoordinator searchCoordinator) {
         this.searchCoordinator = searchCoordinator;
 
@@ -1643,6 +1680,11 @@ public final class MainWindow {
                 );
     }
 
+    /**
+     * Installs keyboard shortcuts used by the application window.
+     *
+     * @param scene scene receiving the shortcuts
+     */
     public void installShortcuts(Scene scene) {
         KeyCodeCombination focusSearch = new KeyCodeCombination(
                 KeyCode.K,
@@ -1918,6 +1960,11 @@ public final class MainWindow {
                 );
     }
 
+    /**
+     * Connects the settings view displayed by this window.
+     *
+     * @param settingsView settings screen
+     */
     public void connectSettings(SettingsView settingsView) {
         this.settingsView = Objects.requireNonNull(
                 settingsView,

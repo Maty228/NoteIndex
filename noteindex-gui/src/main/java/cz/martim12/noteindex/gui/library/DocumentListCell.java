@@ -9,6 +9,9 @@ import javafx.scene.layout.VBox;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * JavaFX list cell displaying a document summary.
+ */
 public final class DocumentListCell extends ListCell<DocumentSummary>{
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("d MMM yyyy").withZone(ZoneId.systemDefault());
@@ -18,6 +21,9 @@ public final class DocumentListCell extends ListCell<DocumentSummary>{
     private final VBox content = new VBox(5, title, metadata);
 
 
+    /**
+     * Creates a document list cell.
+     */
     public DocumentListCell() {
         title.getStyleClass().add("document-cell-title");
         metadata.getStyleClass().add("document-cell-metadata");

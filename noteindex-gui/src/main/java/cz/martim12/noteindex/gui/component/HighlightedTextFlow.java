@@ -14,6 +14,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * JavaFX text component capable of displaying highlighted character ranges.
+ *
+ * <p>The component renders text normally while drawing highlight backgrounds
+ * for matching ranges.</p>
+ */
 public final class HighlightedTextFlow extends StackPane {
 
     private final Pane highlightLayer = new Pane();
@@ -23,6 +29,9 @@ public final class HighlightedTextFlow extends StackPane {
 
     private boolean updatingHighlights;
 
+    /**
+     * Creates an empty highlighted text flow.
+     */
     public HighlightedTextFlow() {
         getStyleClass().add("highlighted-text-flow");
 
@@ -44,6 +53,12 @@ public final class HighlightedTextFlow extends StackPane {
         );
     }
 
+    /**
+     * Displays text with the provided highlight ranges.
+     *
+     * @param text text content to display
+     * @param highlights ranges to highlight within the text
+     */
     public void showText(
             String text,
             List<HighlightRange> highlights
