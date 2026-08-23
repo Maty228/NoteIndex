@@ -8,6 +8,12 @@ import java.sql.Statement;
 import java.util.Objects;
 import java.sql.ResultSet;
 
+/**
+ * Initializes and migrates the SQLite database schema used by NoteIndex.
+ *
+ * <p>The initializer creates required tables and indexes and applies
+ * supported schema migrations when necessary.</p>
+ */
 public final class DatabaseInitializer {
     private static final String CREATE_DOCUMENTS_TABLE = """
             CREATE TABLE IF NOT EXISTS documents (
@@ -38,10 +44,20 @@ public final class DatabaseInitializer {
 
     private final SqliteConnectionFactory connectionFactory;
 
+    /**
+     * Creates a database initializer.
+     *
+     * @param connectionFactory factory used to obtain database connections
+     */
     public DatabaseInitializer(SqliteConnectionFactory connectionFactory) {
         this.connectionFactory = Objects.requireNonNull(connectionFactory, "Connection factory must not be null");
     }
 
+    /**
+     * Creates or updates the database schema.
+     *
+     * @throws RepositoryException if initialization fails
+     */
     public void initialize() {
         try (Connection connection = connectionFactory.openConnection()) {
             connection.setAutoCommit(false);

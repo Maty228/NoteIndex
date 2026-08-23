@@ -11,16 +11,30 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 
+/**
+ * Creates configured SQLite database connections.
+ */
 public final class SqliteConnectionFactory {
     private final Path databaseFile;
 
+    /**
+     * Creates a connection factory for the given database file.
+     *
+     * @param databaseFile SQLite database location
+     */
     public SqliteConnectionFactory(Path databaseFile) {
         this.databaseFile = Objects.requireNonNull(databaseFile,"Database file must not be null")
                 .toAbsolutePath().normalize();
 
     }
 
-    public Connection openConnection(){
+    /**
+     * Opens a configured SQLite database connection.
+     *
+     * @return open database connection
+     * @throws RepositoryException if the connection cannot be created
+     */
+    public Connection openConnection() {
         createParentDirectory();
 
         Connection connection = null;
@@ -42,6 +56,11 @@ public final class SqliteConnectionFactory {
         }
     }
 
+    /**
+     * Returns the configured database file location.
+     *
+     * @return database file path
+     */
     public Path databaseFile() {
         return databaseFile;
     }

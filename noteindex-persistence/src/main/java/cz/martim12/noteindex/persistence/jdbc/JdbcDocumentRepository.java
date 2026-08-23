@@ -15,6 +15,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * JDBC-based implementation of {@link DocumentRepository}.
+ *
+ * <p>Stores documents in a SQLite database.</p>
+ */
 public class JdbcDocumentRepository implements DocumentRepository {
     private static final String INSERT_DOCUMENT = """
             INSERT INTO documents (
@@ -85,9 +90,21 @@ public class JdbcDocumentRepository implements DocumentRepository {
     private final SqliteConnectionFactory connectionFactory;
     private final Clock clock;
 
+    /**
+     * Creates a repository using the system UTC clock.
+     *
+     * @param connectionFactory factory used to create database connections
+     */
     public JdbcDocumentRepository(SqliteConnectionFactory connectionFactory) {
         this(connectionFactory, Clock.systemUTC());
     }
+
+    /**
+     * Creates a repository with a custom clock.
+     *
+     * @param connectionFactory factory used to create database connections
+     * @param clock clock used for document import timestamps
+     */
     public JdbcDocumentRepository(SqliteConnectionFactory connectionFactory, Clock clock) {
         this.connectionFactory = Objects.requireNonNull(
                 connectionFactory,
@@ -100,6 +117,14 @@ public class JdbcDocumentRepository implements DocumentRepository {
         );
     }
 
+    /**
+     * Saves a new document in the database.
+     *
+     * @param document document data to persist
+     * @return persisted document with generated identifier
+     * @throws DuplicateDocumentException if the source was already imported
+     * @throws RepositoryException if persistence fails
+     */
     @Override
     public Document save(ImportedDocument document) {
         validateDocument(document);
@@ -158,6 +183,14 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /**
+     * Finds a document by identifier.
+     *
+     * @param id document identifier
+     * @return matching document if found
+     * @throws IllegalArgumentException if the identifier is not positive
+     * @throws RepositoryException if loading fails
+     */
     @Override
     public Optional<Document> findById(long id){
         requirePositiveId(id);
@@ -182,6 +215,12 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /**
+     * Returns all stored documents ordered by import time.
+     *
+     * @return stored documents
+     * @throws RepositoryException if loading fails
+     */
     @Override
     public List<Document> findAll() {
         List<Document> documents = new ArrayList<>();
@@ -204,6 +243,12 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /**
+     * Returns document summaries without loading full content.
+     *
+     * @return document summaries
+     * @throws RepositoryException if loading fails
+     */
     @Override
     public List<DocumentSummary> findAllSummaries() {
         List<DocumentSummary> summaries = new ArrayList<>();
@@ -226,6 +271,14 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /**
+     * Checks whether a source URI has already been imported.
+     *
+     * @param sourceUri source URI to check
+     * @return true if the source exists
+     * @throws IllegalArgumentException if the URI is blank
+     * @throws RepositoryException if checking fails
+     */
     @Override
     public boolean existsBySourceUri(String sourceUri) {
         requireNonBlank(sourceUri, "Source URI");
@@ -246,6 +299,13 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /**
+     * Updates the display title of a document.
+     *
+     * @param id document identifier
+     * @param displayTitle new display title
+     * @return true if a document was updated
+     */
     @Override
     public boolean updateDisplayTitle(long id, String displayTitle) {
         requirePositiveId(id);
@@ -272,6 +332,12 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /**
+     * Deletes a document from storage.
+     *
+     * @param id document identifier
+     * @return true if a document was deleted
+     */
     @Override
     public boolean deleteById(long id) {
         requirePositiveId(id);

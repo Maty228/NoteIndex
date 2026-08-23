@@ -1,5 +1,11 @@
+/**
+ * Provides persistent storage functionality for NoteIndex.
+ *
+ * <p>This module contains repository abstractions and JDBC-based SQLite
+ * persistence implementations.</p>
+ */
 module noteindex.persistence {
-    requires noteindex.core;
+    requires transitive noteindex.core;
     requires java.sql;
     requires org.xerial.sqlitejdbc;
 
