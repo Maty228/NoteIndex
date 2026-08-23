@@ -5,8 +5,16 @@ package cz.martim12.noteindex.cli;
  */
 public final class NoteIndexCli {
 
+    /**
+     * Utility class constructor.
+     */
     private NoteIndexCli() {}
 
+    /**
+     * Starts the NoteIndex command-line application.
+     *
+     * @param args command-line arguments
+     */
     public static void main(String[] args) {
         int exitCode = new CliApplication().run(args, System.out, System.err);
 

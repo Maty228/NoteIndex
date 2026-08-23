@@ -198,7 +198,6 @@ class CliBrowsingCommandsTest {
 
         String displayed = standardOutput();
 
-        System.out.println("OUTPUT:\n" + displayed);
         assertTrue(displayed.contains("ID:        12"));
 
         assertTrue(

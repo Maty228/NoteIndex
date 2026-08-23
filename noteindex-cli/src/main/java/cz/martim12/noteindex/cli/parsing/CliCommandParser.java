@@ -18,6 +18,9 @@ import java.util.*;
  * arguments.
  */
 public final class CliCommandParser {
+    /**
+     * Default maximum number of search results.
+     */
     public static final int DEFAULT_SEARCH_LIMIT = 10;
 
     private static final Set<String> COMMAND_NAMES = Set.of(
@@ -27,10 +30,22 @@ public final class CliCommandParser {
     private final Path defaultDatabaseFile;
 
 
+    /**
+     * Creates a CLI command parser.
+     *
+     * @param defaultDatabaseFile default database location
+     */
     public CliCommandParser(Path defaultDatabaseFile) {
         this.defaultDatabaseFile = Objects.requireNonNull(defaultDatabaseFile, "Default database file must not be null");
     }
 
+    /**
+     * Parses command-line arguments into a CLI invocation model.
+     *
+     * @param args command-line arguments
+     * @return parsed CLI arguments
+     * @throws CliUsageException if arguments contain invalid syntax
+     */
     public CliArguments parse(String[] args) {
         Objects.requireNonNull(args, "Arguments must not be null");
 

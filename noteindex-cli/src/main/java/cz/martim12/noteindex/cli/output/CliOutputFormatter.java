@@ -17,6 +17,11 @@ public final class CliOutputFormatter {
 
     private CliOutputFormatter() {}
 
+    /**
+     * Prints general CLI usage information.
+     *
+     * @param output destination output stream
+     */
     public static void printGeneralHelp(PrintStream output) {
         requireOutput(output);
 
@@ -43,6 +48,12 @@ public final class CliOutputFormatter {
                 """.stripTrailing());
     }
 
+    /**
+     * Prints help information for a specific command.
+     *
+     * @param output destination output stream
+     * @param command command name
+     */
     public static void printCommandHelp(PrintStream output, String command) {
         requireOutput(output);
         Objects.requireNonNull(command, "Command name must not be null");
@@ -71,9 +82,9 @@ public final class CliOutputFormatter {
                     """;
             case "show" -> """
                     Usage:
-                      noteindex delete <document-id>
-                    
-                    Deletes one document.
+                      noteindex show <document-id>
+            
+                    Displays one document.
                     """;
             case "formats" -> """
                     Usage:
@@ -106,11 +117,23 @@ public final class CliOutputFormatter {
         output.println(help.stripTrailing());
     }
 
+    /**
+     * Prints the application version.
+     *
+     * @param output destination output stream
+     * @param version version string
+     */
     public static void printVersion(PrintStream output, String version) {
         requireOutput(output);
         output.println("NoteIndex " + version);
     }
 
+    /**
+     * Prints supported document import formats.
+     *
+     * @param output destination output stream
+     * @param extensions supported extensions
+     */
     public static void printFormats(PrintStream output, Set<String> extensions) {
         requireOutput(output);
         Objects.requireNonNull(extensions, "Extensions must not be null");
@@ -127,6 +150,12 @@ public final class CliOutputFormatter {
                 .forEach(extension -> output.println("  " + extension));
     }
 
+    /**
+     * Prints information about an imported document.
+     *
+     * @param output destination output stream
+     * @param document imported document
+     */
     public static void printImportedDocument(PrintStream output, Document document) {
         requireOutput(output);
         Objects.requireNonNull(document, "Imported document must not be null");
@@ -137,6 +166,12 @@ public final class CliOutputFormatter {
         output.println("Source: " + document.sourceUri());
     }
 
+    /**
+     * Prints a list of stored document summaries.
+     *
+     * @param output destination output stream
+     * @param documents documents to display
+     */
     public static void printDocumentList(PrintStream output, List<DocumentSummary> documents) {
         requireOutput(output);
         Objects.requireNonNull(documents, "Documents must not be null");
@@ -159,6 +194,12 @@ public final class CliOutputFormatter {
         }
     }
 
+    /**
+     * Prints complete information and content of a document.
+     *
+     * @param output destination output stream
+     * @param document document to display
+     */
     public static void printDocument(PrintStream output, Document document) {
         requireOutput(output);
         Objects.requireNonNull(document, "Document must not be null");
@@ -172,6 +213,12 @@ public final class CliOutputFormatter {
         output.println(document.originalContent());
     }
 
+    /**
+     * Prints ranked search results.
+     *
+     * @param output destination output stream
+     * @param results search results to display
+     */
     public static void printSearchResults(PrintStream output, List<SearchResult> results) {
         requireOutput(output);
         Objects.requireNonNull(results, "Search results must not be null");
@@ -204,23 +251,47 @@ public final class CliOutputFormatter {
         }
     }
 
+    /**
+     * Prints confirmation of document deletion.
+     *
+     * @param output destination output stream
+     * @param documentId deleted document identifier
+     */
     public static void printDeletedDocument(PrintStream output, long documentId) {
         requireOutput(output);
         output.println("Deleted document " + documentId +".");
     }
 
+    /**
+     * Prints an error message for a missing document.
+     *
+     * @param errorOutput destination error stream
+     * @param documentId missing document identifier
+     */
     public static void printMissingDocument(PrintStream errorOutput, long documentId) {
         requireOutput(errorOutput);
         printOperationError(errorOutput, "Document " + documentId + " does not exist.");
     }
 
 
+    /**
+     * Prints a CLI usage error message and a hint for displaying help.
+     *
+     * @param output destination error stream
+     * @param message error message
+     */
     public static void printUsageError(PrintStream output, String message) {
         requireOutput(output);
         output.println("Error: " + message);
         output.println("Run 'noteindex help' for usage.");
     }
 
+    /**
+     * Prints a general CLI operation error message.
+     *
+     * @param output destination error stream
+     * @param message error message
+     */
     public static void printOperationError(PrintStream output, String message) {
         requireOutput(output);
         output.println("Error: " + message);

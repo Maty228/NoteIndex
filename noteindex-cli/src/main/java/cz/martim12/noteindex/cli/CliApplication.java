@@ -29,6 +29,9 @@ import java.util.Objects;
  */
 public final class CliApplication {
 
+    /**
+     * Current CLI application version.
+     */
     public static final String VERSION = "1.0";
 
     private final NoteIndexServiceFactory serviceFactory;
@@ -36,14 +39,30 @@ public final class CliApplication {
     private final CliErrorHandler errorHandler;
     private final String version;
 
+    /**
+     * Creates a CLI application using the default service factory and configuration.
+     */
     public CliApplication() {
         this(NoteIndexApplications::open, VERSION, new CliCommandParser(CliDatabasePaths.defaultDatabaseFile()));
     }
 
+    /**
+     * Creates a CLI application with a custom service factory and version.
+     *
+     * @param serviceFactory factory used to open application services
+     * @param version displayed application version
+     */
     public CliApplication(NoteIndexServiceFactory serviceFactory, String version) {
         this(serviceFactory, version, new CliCommandParser(CliDatabasePaths.defaultDatabaseFile()));
     }
 
+    /**
+     * Creates a CLI application with custom dependencies.
+     *
+     * @param serviceFactory factory used to open application services
+     * @param version displayed application version
+     * @param commandParser parser used for CLI arguments
+     */
     public CliApplication(NoteIndexServiceFactory serviceFactory, String version, CliCommandParser commandParser) {
         this(serviceFactory, version, commandParser, new CliErrorHandler());
     }
@@ -62,6 +81,9 @@ public final class CliApplication {
     /**
      * Executes one CLI invocation.
      *
+     * @param args command-line arguments
+     * @param standardOutput normal output stream
+     * @param errorOutput error output stream
      * @return process exit code
      */
     public int run(String[] args, PrintStream standardOutput, PrintStream errorOutput) {

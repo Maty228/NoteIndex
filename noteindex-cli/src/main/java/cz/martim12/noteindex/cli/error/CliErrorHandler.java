@@ -10,12 +10,18 @@ import java.util.Objects;
 /**
  * Converts expected CLI failures into user-facing messages
  * and process exit codes.
- *
  * Stack traces are deliberately not printed for normal command
  * failures.
  */
 public final class CliErrorHandler {
 
+    /**
+     * Handles invalid CLI syntax and returns the corresponding exit code.
+     *
+     * @param exception usage failure
+     * @param errorOutput output stream for error messages
+     * @return usage error exit code
+     */
     public int handleUsageError(CliUsageException exception, PrintStream errorOutput) {
         Objects.requireNonNull(exception, "Usage exception must not be null");
         Objects.requireNonNull(errorOutput, "Error output must not be null");
@@ -25,6 +31,13 @@ public final class CliErrorHandler {
         return CliExitCode.USAGE_ERROR;
     }
 
+    /**
+     * Handles command execution failures and returns the corresponding exit code.
+     *
+     * @param exception operation failure
+     * @param errorOutput output stream for error messages
+     * @return failure exit code
+     */
     public int handleOperationError(Throwable exception, PrintStream errorOutput) {
         Objects.requireNonNull(exception, "Operation exception must not be null");
         Objects.requireNonNull(errorOutput, "Error output must not be null");

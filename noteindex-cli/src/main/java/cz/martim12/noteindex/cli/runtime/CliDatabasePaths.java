@@ -8,6 +8,11 @@ import java.nio.file.Path;
 public final class CliDatabasePaths {
     private CliDatabasePaths() {}
 
+    /**
+     * Returns the default CLI database location.
+     *
+     * @return default SQLite database path
+     */
     public static Path defaultDatabaseFile() {
         String userHome = System.getProperty("user.home");
 

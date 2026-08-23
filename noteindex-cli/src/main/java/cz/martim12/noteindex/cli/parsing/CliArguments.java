@@ -13,9 +13,16 @@ import java.util.Objects;
  */
 public record CliArguments(Path databaseFile, CliCommand command){
 
+    /**
+     * Creates validated CLI arguments.
+     *
+     * @param databaseFile SQLite database file to use
+     * @param command parsed CLI command
+     * @throws NullPointerException if the database file or command is null
+     */
     public CliArguments {
         databaseFile = Objects.requireNonNull(databaseFile, "Database file must not be null").toAbsolutePath().normalize();
 
-        command = Objects.requireNonNull(command, "CLI command must not be null");
+        Objects.requireNonNull(command, "CLI command must not be null");
     }
 }
