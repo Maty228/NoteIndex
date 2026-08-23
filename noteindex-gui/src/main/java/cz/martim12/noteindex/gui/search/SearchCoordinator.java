@@ -8,8 +8,8 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -45,6 +45,8 @@ public final class SearchCoordinator implements AutoCloseable {
     private final AtomicLong generation = new AtomicLong();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicReference<ScheduledFuture<?>> pendingSearch = new AtomicReference<>();
+
+    private final ReadOnlyBooleanWrapper unfinishedQuotedPhrase = new ReadOnlyBooleanWrapper(false);
 
     public SearchCoordinator(NoteIndexService service) {
         this(
@@ -114,6 +116,7 @@ public final class SearchCoordinator implements AutoCloseable {
                 results.clear();
                 error.set(null);
                 searching.set(false);
+                unfinishedQuotedPhrase.set(false);
 
                 completion.complete(null);
             });
@@ -121,7 +124,41 @@ public final class SearchCoordinator implements AutoCloseable {
             return completion;
         }
 
-        CompletableFuture<Void> completion = new CompletableFuture<>();
+        boolean unfinishedQuote =  hasUnclosedQuote(queryText);
+
+        if (unfinishedQuote) {
+            CompletableFuture<Void> completion =  new CompletableFuture<>();
+
+            uiExecutor.accept(() -> {
+                if (closed.get()  || generation.get() != currentGeneration) {
+                    completion.complete(null);
+                    return;
+                }
+
+                results.clear();
+                error.set(null);
+                searching.set(false);
+                unfinishedQuotedPhrase.set(true);
+
+                completion.complete(null);
+            });
+
+            return completion;
+        }
+
+        CompletableFuture<Void> completion =  new CompletableFuture<>();
+
+        uiExecutor.accept(() -> {
+            if (closed.get() || generation.get() != currentGeneration) {
+                completion.complete(null);
+                return;
+            }
+
+            query.set(queryText);
+            error.set(null);
+            searching.set(true);
+            unfinishedQuotedPhrase.set(false);
+        });
 
         uiExecutor.accept(() -> {
             if (closed.get() || generation.get() != currentGeneration) {
@@ -230,6 +267,22 @@ public final class SearchCoordinator implements AutoCloseable {
         }
 
         this.resultLimit = resultLimit;
+    }
+
+    private static boolean hasUnclosedQuote(String query) {
+        boolean quoted = false;
+
+        for (int index = 0; index < query.length(); index++) {
+            if (query.charAt(index) == '"') {
+                quoted = !quoted;
+            }
+        }
+
+        return quoted;
+    }
+
+    public ReadOnlyBooleanProperty unfinishedQuotedPhraseProperty() {
+        return unfinishedQuotedPhrase.getReadOnlyProperty();
     }
 
 

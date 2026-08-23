@@ -564,3 +564,7 @@
     -fx-fill: #d7d0ff;
     -fx-font-weight: 700;
 }
+
+.search-query-warning {
+    -fx-text-fill: #e6c45c;
+}

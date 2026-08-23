@@ -15,6 +15,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import javafx.collections.ListChangeListener;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -91,6 +94,68 @@ class SearchCoordinatorTest {
     }
 
     @Test
+    void ignoresResultsFromStaleInFlightSearch() throws Exception {
+        StubService service = new StubService();
+
+        service.resultsByQuery = Map.of(
+                "old",
+                List.of(result(1, "Old Result", 4.0)),
+                "new",
+                List.of(result(2, "New Result", 8.0))
+        );
+
+        service.blockedQuery = "old";
+        service.searchStarted = new CountDownLatch(1);
+        service.releaseSearch = new CountDownLatch(1);
+
+        try (SearchCoordinator coordinator = createCoordinator(service, 0)) {
+            List<List<Long>> publishedResults = new ArrayList<>();
+
+            coordinator.results().addListener(
+                    (ListChangeListener<SearchResult>) change ->
+                            publishedResults.add(
+                                    coordinator.results().stream()
+                                            .map(result -> result.document().id())
+                                            .toList()
+                            )
+            );
+
+            coordinator.search("old");
+
+            assertTrue(
+                    service.searchStarted.await(
+                            3,
+                            TimeUnit.SECONDS
+                    )
+            );
+
+            var newestSearch = coordinator.search("new");
+
+            service.releaseSearch.countDown();
+
+            newestSearch.get(3, TimeUnit.SECONDS);
+
+            assertEquals(
+                    List.of("old", "new"),
+                    service.executedQueries
+            );
+
+            assertFalse(
+                    publishedResults.contains(
+                            List.of(1L)
+                    )
+            );
+
+            assertEquals(
+                    List.of(2L),
+                    coordinator.results().stream()
+                            .map(result -> result.document().id())
+                            .toList()
+            );
+        }
+    }
+
+    @Test
     void exposesSearchFailure() {
         StubService service = new StubService();
 
@@ -152,6 +217,77 @@ class SearchCoordinatorTest {
         }
     }
 
+    @Test
+    void waitsForClosingQuoteBeforeSearching()
+            throws Exception {
+
+        StubService service =
+                new StubService();
+
+        try (
+                SearchCoordinator coordinator =
+                        createCoordinator(
+                                service,
+                                0
+                        )
+        ) {
+            coordinator.search("\"virtual")
+                    .get(
+                            3,
+                            TimeUnit.SECONDS
+                    );
+
+            assertEquals(
+                    0,
+                    service.searchCount
+            );
+
+            assertTrue(
+                    coordinator.results()
+                            .isEmpty()
+            );
+
+            assertNull(
+                    coordinator.errorProperty()
+                            .get()
+            );
+
+            assertTrue(
+                    coordinator
+                            .unfinishedQuotedPhraseProperty()
+                            .get()
+            );
+
+            coordinator.search("")
+                    .get(3, TimeUnit.SECONDS);
+
+            assertFalse(
+                    coordinator
+                            .unfinishedQuotedPhraseProperty()
+                            .get()
+            );
+
+            coordinator.search(
+                            "\"virtual machine\""
+                    )
+                    .get(
+                            3,
+                            TimeUnit.SECONDS
+                    );
+
+            assertEquals(
+                    1,
+                    service.searchCount
+            );
+
+            assertFalse(
+                    coordinator
+                            .unfinishedQuotedPhraseProperty()
+                            .get()
+            );
+        }
+    }
+
     private SearchCoordinator createCoordinator(
             StubService service,
             long debounceMillis
@@ -187,6 +323,11 @@ class SearchCoordinatorTest {
     private static final class StubService implements NoteIndexService {
 
         private List<SearchResult> results = List.of();
+        private Map<String, List<SearchResult>> resultsByQuery = Map.of();
+
+        private String blockedQuery;
+        private CountDownLatch searchStarted;
+        private CountDownLatch releaseSearch;
         private RuntimeException failure;
 
         private final List<String> executedQueries = new ArrayList<>();
@@ -199,16 +340,40 @@ class SearchCoordinatorTest {
         public List<SearchResult> search(SearchQuery query, int limit) {
             searchCount++;
 
-            lastQuery = query.text();
+            String text = query.text();
+
+            lastQuery = text;
             lastLimit = limit;
 
-            executedQueries.add(query.text());
+            executedQueries.add(text);
 
             if (failure != null) {
                 throw failure;
             }
 
-            return results;
+            if (text.equals(blockedQuery)) {
+                searchStarted.countDown();
+
+                try {
+                    if (!releaseSearch.await(3, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException(
+                                "Timed out waiting to release blocked search"
+                        );
+                    }
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+
+                    throw new IllegalStateException(
+                            "Blocked search was interrupted",
+                            exception
+                    );
+                }
+            }
+
+            return resultsByQuery.getOrDefault(
+                    text,
+                    results
+            );
         }
 
         @Override

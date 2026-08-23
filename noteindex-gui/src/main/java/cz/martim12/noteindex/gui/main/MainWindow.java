@@ -75,6 +75,8 @@ public final class MainWindow {
     private final Label statusDot;
     private final Label statusText;
 
+    private Label quoteWarning;
+
     private Button toolbarImportButton;
     private Button welcomeImportButton;
 
@@ -579,6 +581,10 @@ public final class MainWindow {
 
     public void connectSearch(SearchCoordinator searchCoordinator) {
         this.searchCoordinator = searchCoordinator;
+
+        quoteWarning.visibleProperty().bind(
+                searchCoordinator.unfinishedQuotedPhraseProperty()
+        );
 
         searchResultList.setItems(searchCoordinator.results());
 
@@ -1106,18 +1112,28 @@ public final class MainWindow {
         statusDocumentCount = new Label("0 documents");
         statusDocumentCount.getStyleClass().add("status-text");
 
-        Region spacing = new Region();
+        Region warningOffset = new Region();
+        warningOffset.setPrefWidth(140);
 
+        Region spacing = new Region();
         HBox.setHgrow(spacing, Priority.ALWAYS);
 
         statusDot.getStyleClass().add("status-dot");
-
         statusText.getStyleClass().add("status-text");
 
-        HBox statusBar = new HBox(7, statusDocumentCount, spacing, statusDot, statusText);
+        quoteWarning = new Label("⚠  Unfinished quoted phrase");
+        quoteWarning.getStyleClass().add("search-query-warning");
+
+        quoteWarning.setVisible(false);
+        quoteWarning.setManaged(false);
+
+        quoteWarning.managedProperty().bind(
+                quoteWarning.visibleProperty()
+        );
+
+        HBox statusBar = new HBox(7, statusDocumentCount, warningOffset, quoteWarning, spacing, statusDot, statusText);
 
         statusBar.setAlignment(Pos.CENTER_LEFT);
-
         statusBar.getStyleClass().add("status-bar");
 
         return statusBar;

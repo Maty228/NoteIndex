@@ -639,3 +639,7 @@
 .search-result-metadata {
     -fx-text-fill: #969da7;
 }
+
+.search-query-warning {
+    -fx-text-fill: #9a7200;
+}

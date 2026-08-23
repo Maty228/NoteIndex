@@ -706,3 +706,8 @@
     -fx-pref-height: 104px;
     -fx-max-height: 104px;
 }
+
+.search-query-warning {
+    -fx-font-size: 11px;
+    -fx-font-weight: 500;
+}

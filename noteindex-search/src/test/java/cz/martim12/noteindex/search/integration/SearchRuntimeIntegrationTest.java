@@ -211,6 +211,58 @@ class SearchRuntimeIntegrationTest {
         }
     }
 
+    @Test
+    void usesPrefixMatchingAcrossRuntime() {
+        try (SearchRuntime runtime =
+                     SearchRuntimes.inMemory()) {
+
+            String body =
+                    "The heap contains dynamically allocated objects.";
+
+            runtime.index().indexDocument(
+                    document(
+                            1,
+                            "Object Storage",
+                            body
+                    )
+            );
+
+            List<SearchHit> hits =
+                    runtime.searchEngine()
+                            .search("objec", 10);
+
+            assertEquals(
+                    List.of(1L),
+                    hits.stream()
+                            .map(SearchHit::documentId)
+                            .toList()
+            );
+
+            Snippet snippet =
+                    runtime.snippetExtractor()
+                            .extract(
+                                    body,
+                                    runtime.queryParser()
+                                            .parse("objec"),
+                                    100
+                            );
+
+            assertEquals(
+                    "objects",
+                    body.substring(
+                            snippet.matches()
+                                    .getFirst()
+                                    .sourceStartOffset(),
+                            snippet.matches()
+                                    .getFirst()
+                                    .sourceEndOffset()
+                    )
+            );
+        }
+    }
+
+
+
     private static IndexDocument document(
             long documentId,
             String title,
