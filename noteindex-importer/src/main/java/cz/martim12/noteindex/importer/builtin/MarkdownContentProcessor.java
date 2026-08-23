@@ -1,5 +1,7 @@
 package cz.martim12.noteindex.importer.builtin;
 
+import cz.martim12.noteindex.importer.exception.ImportException;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -71,7 +73,14 @@ final class MarkdownContentProcessor {
 
     private MarkdownContentProcessor() {}
 
-    static ProcessedMarkdown process(String markdown) {
+    /**
+     * Reads a Markdown file and creates an imported document.
+     *
+     * @param markdown Markdown file to import
+     * @return imported document data
+     * @throws ImportException if the file cannot be read
+     */
+     static ProcessedMarkdown process(String markdown) {
         Objects.requireNonNull(markdown, "Markdown must not be null");
 
         String withoutComments = HTML_COMMENT.matcher(markdown).replaceAll(" ");

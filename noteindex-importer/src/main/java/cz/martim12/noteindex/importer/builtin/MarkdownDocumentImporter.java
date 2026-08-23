@@ -11,6 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
+/**
+ * Imports Markdown files into NoteIndex documents.
+ */
 @ImporterPlugin(
         name = "Markdown Importer",
         formatId = "text/markdown",
@@ -18,6 +21,13 @@ import java.util.Objects;
 )
 public final class MarkdownDocumentImporter implements DocumentImporter {
 
+    /**
+     * Reads and converts a Markdown file into an imported document.
+     *
+     * @param source Markdown file to import
+     * @return imported document data
+     * @throws ImportException if the file cannot be read or processed
+     */
     @Override
     public ImportedDocument importDocument(Path source) throws ImportException {
 

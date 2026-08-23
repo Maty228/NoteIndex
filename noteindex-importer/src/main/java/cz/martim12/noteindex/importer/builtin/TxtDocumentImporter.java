@@ -11,12 +11,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
+/**
+ * Imports plain text files into NoteIndex documents.
+ */
 @ImporterPlugin(
         name= "Plain Text Importer",
         formatId = "text/plain",
         extensions = {"txt"}
 )
 public class TxtDocumentImporter implements DocumentImporter {
+
+    /**
+     * Reads a text file and creates an imported document.
+     *
+     * @param source text file to import
+     * @return imported document data
+     * @throws ImportException if the file cannot be read
+     */
     @Override
     public ImportedDocument importDocument(Path source) throws ImportException {
         Objects.requireNonNull(source, "Source path must not be null");

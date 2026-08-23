@@ -1,5 +1,11 @@
+/**
+ * Provides document importing functionality.
+ *
+ * <p>This module defines importer APIs, importer discovery, and built-in
+ * support for supported document formats.</p>
+ */
 module noteindex.importer {
-    requires noteindex.core;
+    requires transitive noteindex.core;
 
     exports cz.martim12.noteindex.importer.api;
     exports cz.martim12.noteindex.importer.annotation;

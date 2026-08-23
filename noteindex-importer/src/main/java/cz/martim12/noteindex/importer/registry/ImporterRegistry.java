@@ -9,10 +9,22 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Registry responsible for discovering and resolving document importers.
+ *
+ * <p>Importers are selected based on normalized file extensions.</p>
+ */
 public class ImporterRegistry {
     private final Map<String, ImporterDefinition> importersByExtension;
     private final List<ImporterDefinition> definitions;
 
+    /**
+     * Creates a registry from available importer implementations.
+     *
+     * @param importers importer implementations to register
+     * @throws ImporterConfigurationException if importers contain invalid
+     *         metadata or conflicting extensions
+     */
     public ImporterRegistry(Iterable<DocumentImporter> importers) {
         Map<String, ImporterDefinition> registered = new LinkedHashMap<>();
         List<ImporterDefinition> discoveredDefinitions = new ArrayList<>();
@@ -40,11 +52,23 @@ public class ImporterRegistry {
         this.definitions = List.copyOf(discoveredDefinitions);
     }
 
+    /**
+     * Discovers available importers using Java's service loader mechanism.
+     *
+     * @return registry containing discovered importers
+     */
     public static ImporterRegistry discover() {
         ServiceLoader<DocumentImporter> loader = ServiceLoader.load(DocumentImporter.class);
         return new ImporterRegistry(loader);
     }
 
+    /**
+     * Finds an importer capable of handling the given file.
+     *
+     * @param source source file
+     * @return matching importer
+     * @throws UnsupportedFormatException if no importer supports the file extension
+     */
     public DocumentImporter resolve(Path source) {
         String extension = extractExtension(source);
         ImporterDefinition definition = importersByExtension.get(extension);
@@ -56,10 +80,20 @@ public class ImporterRegistry {
         return definition.importer();
     }
 
+    /**
+     * Returns all supported file extensions.
+     *
+     * @return supported extensions
+     */
     public Set<String> supportedExtensions() {
         return importersByExtension.keySet();
     }
 
+    /**
+     * Returns registered importer definitions.
+     *
+     * @return registered importers
+     */
     public Collection<ImporterDefinition> importers() {
         return definitions;
     }
