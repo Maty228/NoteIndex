@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>NoteIndex Documentation</title>
+</head>
+<body>
+
+<h1>NoteIndex</h1>
+
+<p>
+    NoteIndex is a local desktop application for managing, importing and searching study notes.
+</p>
+
+<h2>Overview</h2>
+
+<p>
+    The application allows users to import text-based documents, store them locally, and search through their contents using a full-text search engine.
+    It provides both a graphical user interface and a command-line interface.
+</p>
+
+<h2>Architecture</h2>
+
+<p>
+    The project is organized into several independent modules:
+</p>
+
+<ul>
+    <li><b>noteindex-core</b> - shared domain models and exceptions.</li>
+    <li><b>noteindex-importer</b> - document importing system and format support.</li>
+    <li><b>noteindex-persistence</b> - SQLite-based document storage.</li>
+    <li><b>noteindex-search</b> - indexing, querying, and ranking engine.</li>
+    <li><b>noteindex-application</b> - application workflows and services.</li>
+    <li><b>noteindex-cli</b> - command-line interface.</li>
+    <li><b>noteindex-gui</b> - JavaFX desktop interface.</li>
+</ul>
+
+<h2>Main Features</h2>
+
+<ul>
+    <li>Importing Markdown and plain text documents.</li>
+    <li>Local SQLite document storage.</li>
+    <li>Full-text search with ranking.</li>
+    <li>Phrase searching and highlighted results.</li>
+    <li>Document management through GUI and CLI.</li>
+</ul>
+
+<h2>Persistence</h2>
+
+<p>
+    NoteIndex stores data locally using SQLite. The search index is maintained as derived data and synchronized with the stored documents.
+</p>
+
+<h2>User Interfaces</h2>
+
+<p>
+    The application provides:
+</p>
+
+<ul>
+    <li>A JavaFX graphical interface for everyday use.</li>
+    <li>A command-line interface for terminal-based workflows.</li>
+</ul>
+
+</body>
+</html>

@@ -25,23 +25,48 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-  <dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.11.2</version>
 
-    <!-- SQLite JDBC -->
-    <dependency>
-      <groupId>org.xerial</groupId>
-      <artifactId>sqlite-jdbc</artifactId>
-      <version>3.50.3.0</version>
-    </dependency>
+        <executions>
+          <execution>
+            <id>aggregate-javadoc</id>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+          </execution>
+        </executions>
 
-    <!-- Testing -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>5.13.4</version>
-      <scope>test</scope>
-    </dependency>
+        <configuration>
+          <doclint>none</doclint>
+          <overview>${maven.multiModuleProjectDirectory}/src/main/javadoc/overview.html</overview>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
-  </dependencies>
+  <dependencyManagement>
+    <dependencies>
+
+      <!-- SQLite JDBC -->
+      <dependency>
+        <groupId>org.xerial</groupId>
+        <artifactId>sqlite-jdbc</artifactId>
+        <version>3.50.3.0</version>
+      </dependency>
+
+      <!-- Testing -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.13.4</version>
+      </dependency>
+
+    </dependencies>
+  </dependencyManagement>
 
 </project>
