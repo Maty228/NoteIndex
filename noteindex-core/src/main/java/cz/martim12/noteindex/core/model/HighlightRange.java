@@ -11,6 +11,15 @@ public record HighlightRange(
         int endOffset
 ) {
 
+    /**
+     * Validates and creates a highlight range.
+     *
+     * @param startOffset inclusive start offset
+     * @param endOffset exclusive end offset
+     * @throws IllegalArgumentException if {@code startOffset} is negative or
+     *                                  {@code endOffset} is not greater than
+     *                                  {@code startOffset}
+     */
     public HighlightRange {
         if (startOffset < 0) {
             throw new IllegalArgumentException(
