@@ -2,6 +2,7 @@ package cz.martim12.noteindex.gui.importflow;
 
 import cz.martim12.noteindex.application.api.NoteIndexService;
 import cz.martim12.noteindex.core.model.Document;
+import cz.martim12.noteindex.gui.concurrent.ExecutorShutdown;
 import javafx.application.Platform;
 
 import java.nio.file.Path;
@@ -124,7 +125,7 @@ public final class ImportCoordinator implements AutoCloseable {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        executor.shutdownNow();
+        ExecutorShutdown.shutdownNowAndAwait(executor);
     }
 
     private static List<Path> normalizeSources(List<Path> sources) {

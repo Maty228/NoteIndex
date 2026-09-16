@@ -3,6 +3,7 @@ package cz.martim12.noteindex.gui.main;
 import cz.martim12.noteindex.application.api.NoteIndexService;
 import cz.martim12.noteindex.core.model.Document;
 import cz.martim12.noteindex.core.model.DocumentSummary;
+import cz.martim12.noteindex.gui.concurrent.ExecutorShutdown;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -462,7 +463,7 @@ public final class MainViewModel implements AutoCloseable {
         }
 
         selectionGeneration.incrementAndGet();
-        executor.shutdownNow();
+        ExecutorShutdown.shutdownNowAndAwait(executor);
     }
 
     private static ExecutorService createDefaultExecutor() {

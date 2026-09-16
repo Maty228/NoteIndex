@@ -3,6 +3,7 @@ package cz.martim12.noteindex.gui.search;
 import cz.martim12.noteindex.application.api.NoteIndexService;
 import cz.martim12.noteindex.core.model.SearchQuery;
 import cz.martim12.noteindex.core.model.SearchResult;
+import cz.martim12.noteindex.gui.concurrent.ExecutorShutdown;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -286,7 +287,7 @@ public final class SearchCoordinator implements AutoCloseable {
         generation.incrementAndGet();
         cancelPendingSearch();
 
-        executor.shutdownNow();
+        ExecutorShutdown.shutdownNowAndAwait(executor);
     }
 
     private static ScheduledExecutorService createDefaultExecutor() {

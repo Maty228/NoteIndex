@@ -1,6 +1,7 @@
 package cz.martim12.noteindex.gui.application;
 
 import cz.martim12.noteindex.application.api.NoteIndexService;
+import cz.martim12.noteindex.gui.concurrent.ExecutorShutdown;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -179,15 +180,12 @@ public final class GuiApplicationContext implements AutoCloseable {
             future.cancel(true);
         }
 
+        ExecutorShutdown.shutdownNowAndAwait(executor);
+
         NoteIndexService openedService = service.getAndSet(null);
 
-
-        try {
-            if (openedService != null) {
-                openedService.close();
-            }
-        } finally {
-            executor.shutdownNow();
+        if (openedService != null) {
+            openedService.close();
         }
     }
 

@@ -309,18 +309,6 @@ public final class MainWindow {
                 activateLibraryView(MainViewModel.LibraryView.MARKDOWN)
         );
 
-        recentButton.setOnAction(event ->
-                viewModel.setLibraryView(MainViewModel.LibraryView.RECENT)
-        );
-
-        textNotesButton.setOnAction(event ->
-                viewModel.setLibraryView(MainViewModel.LibraryView.TXT)
-        );
-
-        markdownNotesButton.setOnAction(event ->
-                viewModel.setLibraryView(MainViewModel.LibraryView.MARKDOWN)
-        );
-
         sortBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 viewModel.setDocumentSort(newValue);
@@ -415,11 +403,14 @@ public final class MainWindow {
     }
 
     private void activateLibraryView(MainViewModel.LibraryView libraryView) {
+        viewModel.setLibraryView(libraryView);
+
         if (searchField != null && !searchField.getText().isBlank()) {
             searchField.clear();
+            return;
         }
 
-        viewModel.setLibraryView(libraryView);
+        showLibraryMode();
     }
 
     private void updateDocumentCount(int count) {
@@ -1648,7 +1639,7 @@ public final class MainWindow {
         long lastImportedId = result.importedDocuments().getLast().id();
 
         allNotesButton.setSelected(true);
-        viewModel.setLibraryView(MainViewModel.LibraryView.ALL);
+        activateLibraryView(MainViewModel.LibraryView.ALL);
 
         viewModel.refresh().whenComplete((ignored, failure) ->
                 Platform.runLater(() -> {
