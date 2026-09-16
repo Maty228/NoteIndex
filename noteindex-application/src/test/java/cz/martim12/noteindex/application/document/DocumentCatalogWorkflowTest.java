@@ -2,6 +2,7 @@ package cz.martim12.noteindex.application.document;
 
 import cz.martim12.noteindex.application.index.DocumentIndexMapper;
 import cz.martim12.noteindex.application.index.SearchIndexSynchronizer;
+import cz.martim12.noteindex.application.support.ControllableSearchIndex;
 import cz.martim12.noteindex.core.model.Document;
 import cz.martim12.noteindex.core.model.DocumentSummary;
 import cz.martim12.noteindex.core.model.ImportedDocument;
@@ -294,6 +295,112 @@ class DocumentCatalogWorkflowTest {
                         "concurrency",
                         FieldName.TITLE
                 ).isEmpty()
+        );
+    }
+
+    @Test
+    void rebuildsIndexAfterPostDeletionIndexFailure() {
+        repository.findAll().forEach(document ->
+                searchIndex.indexDocument(
+                        new DocumentIndexMapper().map(document)
+                )
+        );
+
+        IllegalStateException failure =
+                new IllegalStateException(
+                        "Could not remove indexed document"
+                );
+
+        ControllableSearchIndex failingIndex =
+                new ControllableSearchIndex(searchIndex);
+
+        failingIndex.failNextRemovalWith(failure);
+
+        workflow = createWorkflow(failingIndex);
+
+        IllegalStateException thrown =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> workflow.deleteDocument(1)
+                );
+
+        assertSame(failure, thrown);
+        assertTrue(repository.findById(1).isEmpty());
+        assertEquals(1, searchIndex.documentCount());
+
+        assertTrue(
+                searchIndex.postings(
+                        "java",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+
+        assertFalse(
+                searchIndex.postings(
+                        "sqlite",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+    }
+
+    @Test
+    void rebuildsIndexAfterPostRenameIndexFailure() {
+        repository.findAll().forEach(document ->
+                searchIndex.indexDocument(
+                        new DocumentIndexMapper().map(document)
+                )
+        );
+
+        IllegalStateException failure =
+                new IllegalStateException(
+                        "Could not replace indexed document"
+                );
+
+        ControllableSearchIndex failingIndex =
+                new ControllableSearchIndex(searchIndex);
+
+        failingIndex.failNextIndexWith(failure);
+
+        workflow = createWorkflow(failingIndex);
+
+        IllegalStateException thrown =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> workflow.renameDocument(
+                                1,
+                                "Concurrency Notes"
+                        )
+                );
+
+        assertSame(failure, thrown);
+        assertEquals(
+                "Concurrency Notes",
+                repository.findById(1).orElseThrow().title()
+        );
+
+        assertTrue(
+                searchIndex.postings(
+                        "java",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+
+        assertFalse(
+                searchIndex.postings(
+                        "concurrency",
+                        FieldName.TITLE
+                ).isEmpty()
+        );
+    }
+
+    private DocumentCatalogWorkflow createWorkflow(SearchIndex index) {
+        return new DocumentCatalogWorkflow(
+                repository,
+                new SearchIndexSynchronizer(
+                        repository,
+                        index,
+                        new DocumentIndexMapper()
+                )
         );
     }
 

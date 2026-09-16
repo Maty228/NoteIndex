@@ -84,6 +84,30 @@ public final class SearchIndexSynchronizer {
         }
     }
 
+    /**
+     * Rebuilds the derived index after an individual synchronization failure.
+     * The original failure remains the failure reported to the caller. If the
+     * rebuild also fails, that recovery failure is attached as suppressed.
+     *
+     * @param originalFailure synchronization failure to preserve
+     */
+    public void recoverAfterSynchronizationFailure(
+            RuntimeException originalFailure
+    ) {
+        Objects.requireNonNull(
+                originalFailure,
+                "Original failure must not be null"
+        );
+
+        try {
+            rebuild();
+        } catch (RuntimeException recoveryFailure) {
+            if (recoveryFailure != originalFailure) {
+                originalFailure.addSuppressed(recoveryFailure);
+            }
+        }
+    }
+
     private void clearAfterFailure(RuntimeException failure) {
         try {
             searchIndex.clear();

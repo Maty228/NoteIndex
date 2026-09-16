@@ -66,7 +66,12 @@ public final class DocumentCatalogWorkflow {
 
         boolean deleted = documentRepository.deleteById(documentId);
 
-        indexSynchronizer.removeDocument(documentId);
+        try {
+            indexSynchronizer.removeDocument(documentId);
+        } catch (RuntimeException failure) {
+            indexSynchronizer.recoverAfterSynchronizationFailure(failure);
+            throw failure;
+        }
 
         return deleted;
     }
@@ -89,22 +94,27 @@ public final class DocumentCatalogWorkflow {
                 newTitle.trim()
         );
 
-        if (!renamed) {
-            indexSynchronizer.removeDocument(documentId);
-            return false;
+        try {
+            if (!renamed) {
+                indexSynchronizer.removeDocument(documentId);
+                return false;
+            }
+
+            Optional<Document> updatedDocument =
+                    documentRepository.findById(documentId);
+
+            if (updatedDocument.isEmpty()) {
+                indexSynchronizer.removeDocument(documentId);
+                return false;
+            }
+
+            indexSynchronizer.indexDocument(updatedDocument.orElseThrow());
+
+            return true;
+        } catch (RuntimeException failure) {
+            indexSynchronizer.recoverAfterSynchronizationFailure(failure);
+            throw failure;
         }
-
-        Optional<Document> updatedDocument =
-                documentRepository.findById(documentId);
-
-        if (updatedDocument.isEmpty()) {
-            indexSynchronizer.removeDocument(documentId);
-            return false;
-        }
-
-        indexSynchronizer.indexDocument(updatedDocument.orElseThrow());
-
-        return true;
     }
 
     private static void requirePositiveDocumentId(long documentId) {

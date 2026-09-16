@@ -55,7 +55,12 @@ public final class DocumentImportWorkflow {
 
         Document persistedDocument = documentRepository.save(importedDocument);
 
-        indexSynchronizer.indexDocument(persistedDocument);
+        try {
+            indexSynchronizer.indexDocument(persistedDocument);
+        } catch (RuntimeException failure) {
+            indexSynchronizer.recoverAfterSynchronizationFailure(failure);
+            throw failure;
+        }
 
         return persistedDocument;
     }

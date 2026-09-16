@@ -16,6 +16,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 /**
  * Default implementation of the public NoteIndex application API.
@@ -29,6 +33,9 @@ public final class DefaultNoteIndexService implements NoteIndexService {
     private final DocumentCatalogWorkflow catalogWorkflow;
     private final SearchRuntime searchRuntime;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock(true);
+    private final Lock readLock = lifecycleLock.readLock();
+    private final Lock writeLock = lifecycleLock.writeLock();
 
     /**
      * Creates the default application service implementation.
@@ -52,50 +59,85 @@ public final class DefaultNoteIndexService implements NoteIndexService {
 
     @Override
     public Document importFile(Path source) {
-        ensureOpen();
-        return importWorkflow.importFile(source);
+        return withWriteLock(
+                () -> importWorkflow.importFile(source)
+        );
     }
 
     @Override
     public List<SearchResult> search(SearchQuery query, int limit) {
-        ensureOpen();
-        return searchWorkflow.search(query, limit);
+        return withReadLock(
+                () -> searchWorkflow.search(query, limit)
+        );
     }
 
     @Override
     public List<DocumentSummary> listDocuments() {
-        ensureOpen();
-        return catalogWorkflow.listDocuments();
+        return withReadLock(
+                catalogWorkflow::listDocuments
+        );
     }
 
     @Override
     public Optional<Document> findDocument(long documentId) {
-        ensureOpen();
-        return catalogWorkflow.findDocument(documentId);
+        return withReadLock(
+                () -> catalogWorkflow.findDocument(documentId)
+        );
     }
 
     @Override
     public boolean deleteDocument(long documentId) {
-        ensureOpen();
-        return catalogWorkflow.deleteDocument(documentId);
+        return withWriteLock(
+                () -> catalogWorkflow.deleteDocument(documentId)
+        );
     }
 
     @Override
     public Set<String> supportedImportExtensions() {
-        ensureOpen();
-        return importWorkflow.supportedExtensions();
+        return withReadLock(
+                importWorkflow::supportedExtensions
+        );
     }
 
     @Override
     public boolean renameDocument(long documentId, String newTitle) {
-        ensureOpen();
-        return catalogWorkflow.renameDocument(documentId, newTitle);
+        return withWriteLock(
+                () -> catalogWorkflow.renameDocument(documentId, newTitle)
+        );
     }
 
     @Override
     public void close() {
-        if (closed.compareAndSet(false, true)) {
-            searchRuntime.close();
+        writeLock.lock();
+
+        try {
+            if (closed.compareAndSet(false, true)) {
+                searchRuntime.close();
+            }
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    private <T> T withReadLock(Supplier<T> operation) {
+        readLock.lock();
+
+        try {
+            ensureOpen();
+            return operation.get();
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    private <T> T withWriteLock(Supplier<T> operation) {
+        writeLock.lock();
+
+        try {
+            ensureOpen();
+            return operation.get();
+        } finally {
+            writeLock.unlock();
         }
     }
 

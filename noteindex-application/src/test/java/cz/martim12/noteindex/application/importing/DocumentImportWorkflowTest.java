@@ -2,6 +2,7 @@ package cz.martim12.noteindex.application.importing;
 
 import cz.martim12.noteindex.application.index.DocumentIndexMapper;
 import cz.martim12.noteindex.application.index.SearchIndexSynchronizer;
+import cz.martim12.noteindex.application.support.ControllableSearchIndex;
 import cz.martim12.noteindex.core.model.Document;
 import cz.martim12.noteindex.core.model.DocumentSummary;
 import cz.martim12.noteindex.core.model.ImportedDocument;
@@ -179,6 +180,75 @@ class DocumentImportWorkflowTest {
     }
 
     @Test
+    void rebuildsIndexAfterPostPersistenceIndexFailure() {
+        IllegalStateException failure =
+                new IllegalStateException(
+                        "Could not update index"
+                );
+
+        ControllableSearchIndex failingIndex =
+                new ControllableSearchIndex(searchIndex);
+
+        failingIndex.failNextIndexWith(failure);
+
+        workflow = createWorkflow(failingIndex);
+
+        IllegalStateException thrown =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> workflow.importFile(
+                                Path.of("notes", "jvm.txt")
+                        )
+                );
+
+        assertSame(failure, thrown);
+        assertEquals(1, searchIndex.documentCount());
+
+        assertFalse(
+                searchIndex.postings(
+                        "virtual",
+                        FieldName.BODY
+                ).isEmpty()
+        );
+    }
+
+    @Test
+    void suppressesRecoveryFailureOnOriginalIndexFailure() {
+        IllegalStateException originalFailure =
+                new IllegalStateException(
+                        "Could not update index"
+                );
+
+        IllegalStateException recoveryFailure =
+                new IllegalStateException(
+                        "Could not rebuild index"
+                );
+
+        ControllableSearchIndex failingIndex =
+                new ControllableSearchIndex(searchIndex);
+
+        failingIndex.failNextIndexWith(originalFailure);
+        failingIndex.failNextIndexWith(recoveryFailure);
+
+        workflow = createWorkflow(failingIndex);
+
+        IllegalStateException thrown =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> workflow.importFile(
+                                Path.of("notes", "jvm.txt")
+                        )
+                );
+
+        assertSame(originalFailure, thrown);
+        assertEquals(
+                List.of(recoveryFailure),
+                List.of(thrown.getSuppressed())
+        );
+        assertEquals(0, searchIndex.documentCount());
+    }
+
+    @Test
     void returnsSupportedImporterExtensions() {
         Set<String> extensions =
                 workflow.supportedExtensions();
@@ -200,6 +270,26 @@ class DocumentImportWorkflowTest {
 
         assertFalse(repository.saveCalled);
         assertEquals(0, searchIndex.documentCount());
+    }
+
+    private DocumentImportWorkflow createWorkflow(SearchIndex index) {
+        ImporterRegistry importerRegistry =
+                new ImporterRegistry(
+                        List.of(importer)
+                );
+
+        SearchIndexSynchronizer synchronizer =
+                new SearchIndexSynchronizer(
+                        repository,
+                        index,
+                        new DocumentIndexMapper()
+                );
+
+        return new DocumentImportWorkflow(
+                importerRegistry,
+                repository,
+                synchronizer
+        );
     }
 
     @ImporterPlugin(
@@ -263,7 +353,7 @@ class DocumentImportWorkflowTest {
 
         @Override
         public List<Document> findAll() {
-            throw new UnsupportedOperationException();
+            return List.of(persistedDocument);
         }
 
         @Override
