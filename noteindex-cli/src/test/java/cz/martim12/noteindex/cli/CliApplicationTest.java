@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CliApplicationTest {
@@ -253,6 +254,37 @@ class CliApplicationTest {
         );
 
         assertEquals(0, openingCount.get());
+    }
+
+    @Test
+    void reportsMalformedImportPathAsUsageError() {
+        AtomicInteger openingCount =
+                new AtomicInteger();
+
+        CliApplication cli = new CliApplication(
+                databaseFile -> {
+                    openingCount.incrementAndGet();
+                    throw new AssertionError(
+                            "Malformed path must not open the service"
+                    );
+                },
+                "1.0-test"
+        );
+
+        String malformedPath = "invalid\0path";
+
+        int exitCode = cli.run(
+                new String[]{"import", malformedPath},
+                output,
+                error
+        );
+
+        assertEquals(CliExitCode.USAGE_ERROR, exitCode);
+        assertEquals(0, openingCount.get());
+        assertTrue(errorOutput().contains(malformedPath));
+        assertFalse(
+                errorOutput().contains("InvalidPathException")
+        );
     }
 
 

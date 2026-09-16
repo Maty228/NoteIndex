@@ -17,6 +17,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CliCommandParserTest {
 
@@ -370,6 +371,44 @@ class CliCommandParserTest {
                 () -> parser.parse(
                         new String[]{"--unknown", "list"}
                 )
+        );
+    }
+
+    @Test
+    void translatesMalformedDatabaseAndImportPaths() {
+        String malformedPath = "invalid\0path";
+
+        CliUsageException databaseFailure =
+                assertThrows(
+                        CliUsageException.class,
+                        () -> parser.parse(
+                                new String[]{
+                                        "--database",
+                                        malformedPath,
+                                        "list"
+                                }
+                        )
+                );
+
+        assertTrue(
+                databaseFailure.getMessage()
+                        .contains(malformedPath)
+        );
+
+        CliUsageException importFailure =
+                assertThrows(
+                        CliUsageException.class,
+                        () -> parser.parse(
+                                new String[]{
+                                        "import",
+                                        malformedPath
+                                }
+                        )
+                );
+
+        assertTrue(
+                importFailure.getMessage()
+                        .contains(malformedPath)
         );
     }
 }

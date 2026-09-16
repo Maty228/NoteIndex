@@ -10,6 +10,7 @@ import cz.martim12.noteindex.cli.command.SearchCommand;
 import cz.martim12.noteindex.cli.command.ShowCommand;
 import cz.martim12.noteindex.cli.command.VersionCommand;
 
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -74,7 +75,10 @@ public final class CliCommandParser {
                         throw new CliUsageException("Missing path after " + arg);
                     }
 
-                    databaseFile = Path.of(args[position]);
+                    databaseFile = parsePath(
+                            args[position],
+                            "database"
+                    );
                     databaseSpecified = true;
                     position++;
                     continue;
@@ -146,7 +150,9 @@ public final class CliCommandParser {
             throw new CliUsageException("Usage: noteindex import <file>");
         }
 
-        return new ImportCommand(Path.of(args.getFirst()));
+        return new ImportCommand(
+                parsePath(args.getFirst(), "import")
+        );
     }
 
     private static SearchCommand parseSearch(List<String> args) {
@@ -246,6 +252,19 @@ public final class CliCommandParser {
             return parsed;
         } catch (NumberFormatException exception) {
             throw new CliUsageException("Invalid " + name.toLowerCase() + ": " + value);
+        }
+    }
+
+    private static Path parsePath(String value, String description) {
+        try {
+            return Path.of(value);
+        } catch (InvalidPathException exception) {
+            throw new CliUsageException(
+                    "Invalid " + description + " path '"
+                            + value
+                            + "': "
+                            + exception.getReason()
+            );
         }
     }
 
