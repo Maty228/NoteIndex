@@ -207,6 +207,7 @@ public final class NoteIndexGui extends Application {
         launch(arguments);
     }
 
+    /** Resolves the configured database path or falls back to the GUI default. */
     private Path resolveDatabaseFile() {
         String configuredDatabase = getParameters().getNamed().get("database");
 
@@ -217,6 +218,7 @@ public final class NoteIndexGui extends Application {
         return Path.of(configuredDatabase).toAbsolutePath().normalize();
     }
 
+    /** Shows a modal startup error containing the database path and failure message. */
     private void showStartupFailureDialog(Stage owner, Path databaseFile, Throwable failure) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.initOwner(owner);
@@ -239,6 +241,7 @@ public final class NoteIndexGui extends Application {
         alert.showAndWait();
     }
 
+    /** Unwraps asynchronous wrapper exceptions to their underlying failure. */
     private static Throwable unwrapFailure(Throwable failure) {
         Throwable current = Objects.requireNonNull(failure, "Failure must not be null");
 
@@ -250,6 +253,7 @@ public final class NoteIndexGui extends Application {
         return current;
     }
 
+    /** Finds a useful message in a failure chain or supplies a fallback. */
     private static String displayMessage(Throwable failure) {
         if (failure == null) {
             return "Unknown error";
@@ -272,6 +276,7 @@ public final class NoteIndexGui extends Application {
         return failure.getClass().getSimpleName();
     }
 
+    /** Resolves a required GUI stylesheet to its external URL form. */
     private static String stylesheet(String relativePath) {
         URL resource = Objects.requireNonNull(
                 NoteIndexGui.class.getResource(relativePath),

@@ -182,6 +182,7 @@ public final class ImportProgressPane {
         okButton.requestFocus();
     }
 
+    /** Rebuilds displayed failure details for a completed import batch. */
     private void populateFailures(ImportBatchResult result) {
         failures.getChildren().clear();
 

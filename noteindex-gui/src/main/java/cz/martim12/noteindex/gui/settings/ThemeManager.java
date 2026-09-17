@@ -70,6 +70,7 @@ public final class ThemeManager implements AutoCloseable {
                 .removeListener(platformThemeListener);
     }
 
+    /** Replaces the managed theme stylesheet on the scene with the resolved selection. */
     private void applyTheme() {
         String stylesheet = resolveStylesheet();
 
@@ -78,6 +79,7 @@ public final class ThemeManager implements AutoCloseable {
         scene.getStylesheets().add(stylesheet);
     }
 
+    /** Resolves the selected stylesheet, including the current system preference when requested. */
     private String resolveStylesheet() {
         return switch (preferences.theme()) {
             case LIGHT -> lightStylesheet;

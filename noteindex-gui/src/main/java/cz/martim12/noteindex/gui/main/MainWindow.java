@@ -380,6 +380,7 @@ public final class MainWindow {
         updateDocumentCount(viewModel.totalDocumentCountProperty().get());
     }
 
+    /** Returns the selected search result when it represents the requested document. */
     private SearchResult selectedSearchResultFor(
             long documentId
     ) {
@@ -402,6 +403,7 @@ public final class MainWindow {
         return result;
     }
 
+    /** Switches to a library filter and coherently leaves any active search mode. */
     private void activateLibraryView(MainViewModel.LibraryView libraryView) {
         viewModel.setLibraryView(libraryView);
 
@@ -413,6 +415,7 @@ public final class MainWindow {
         showLibraryMode();
     }
 
+    /** Updates document totals and the empty-library presentation. */
     private void updateDocumentCount(int count) {
         documentCountLabel.setText(count + (count == 1 ? " note" : " notes"));
         statusDocumentCount.setText(count + (count == 1 ? " document" : " documents"));
@@ -445,6 +448,7 @@ public final class MainWindow {
         dropOverlayFormats.setText(importFileSupport.supportedFormatsLabel());
     }
 
+    /** Constructs the overlay used to accept or reject dragged files. */
     private StackPane createDropOverlay() {
         dropOverlaySymbol = new Label("+");
         dropOverlaySymbol.getStyleClass().add("drop-overlay-symbol");
@@ -485,6 +489,7 @@ public final class MainWindow {
         return overlay;
     }
 
+    /** Installs drag-and-drop handlers on the main window stack. */
     private void configureDragAndDrop() {
 
 
@@ -498,6 +503,7 @@ public final class MainWindow {
         });
     }
 
+    /** Validates dragged files and updates the drop overlay state. */
     private void handleDragOver(DragEvent event) {
         Dragboard dragboard = event.getDragboard();
 
@@ -528,6 +534,7 @@ public final class MainWindow {
         event.consume();
     }
 
+    /** Starts an import for supported dropped files and completes the drag event. */
     private void handleDragDropped(DragEvent event) {
         Dragboard dragboard = event.getDragboard();
 
@@ -562,6 +569,7 @@ public final class MainWindow {
         event.consume();
     }
 
+    /** Displays the accepted-file state of the drop overlay. */
     private void showAcceptedDropOverlay() {
         dropOverlaySymbol.setText("+");
         dropOverlayTitle.setText("Drop notes to import");
@@ -577,6 +585,7 @@ public final class MainWindow {
         showDropOverlay();
     }
 
+    /** Displays the unsupported-file state of the drop overlay. */
     private void showRejectedDropOverlay() {
         dropOverlaySymbol.setText("×");
         dropOverlayTitle.setText("Unsupported files");
@@ -592,11 +601,13 @@ public final class MainWindow {
         showDropOverlay();
     }
 
+    /** Makes the drag-and-drop overlay visible. */
     private void showDropOverlay() {
         dropOverlay.setVisible(true);
         dropOverlay.setManaged(true);
     }
 
+    /** Hides the drag-and-drop overlay. */
     private void hideDropOverlay() {
         dropOverlay.setVisible(false);
         dropOverlay.setManaged(false);
@@ -690,6 +701,7 @@ public final class MainWindow {
         );
     }
 
+    /** Loads a selected result or reapplies its highlights to an already loaded document. */
     private void displaySearchResult(
             SearchResult result
     ) {
@@ -713,6 +725,7 @@ public final class MainWindow {
         );
     }
 
+    /** Transitions document navigation to search-result mode. */
     private void showSearchMode() {
         if (searchMode) {
             documentCountLabel.setText("Searching...");
@@ -734,6 +747,7 @@ public final class MainWindow {
         documentCountLabel.setText("Searching...");
     }
 
+    /** Restores library mode, clears search highlights and synchronizes selection. */
     private void showLibraryMode() {
         if (!searchMode) {
             return;
@@ -761,6 +775,7 @@ public final class MainWindow {
         setStatus("Library ready", "status-dot-ready");
     }
 
+    /** Refreshes search-result state and selects the first current result. */
     private void handleSearchResultsChanged() {
         if (!searchMode) {
             return;
@@ -785,6 +800,7 @@ public final class MainWindow {
 
     }
 
+    /** Updates the displayed count for the current limited result set. */
     private void updateSearchResultCount() {
         int count = searchResultList.getItems().size();
 
@@ -803,6 +819,7 @@ public final class MainWindow {
         );
     }
 
+    /** Aligns the library list selection with the document loaded by the view model. */
     private void synchronizeLibrarySelection() {
         if (viewModel.selectedDocumentProperty().get() == null) {
             if (!documentList.getItems().isEmpty()) {
@@ -827,6 +844,7 @@ public final class MainWindow {
                 );
     }
 
+    /** Presents an operation failure in the window's modal host. */
     private void showOperationError(Throwable failure) {
         MessagePane message = new MessagePane(
                 "NoteIndex",
@@ -838,6 +856,7 @@ public final class MainWindow {
         modalHost.show(message.root());
     }
 
+    /** Constructs the main toolbar with navigation, search and settings controls. */
     private HBox createToolbar() {
         Button sidebarButton =
                 createIconButton("☰", "Toggle sidebar");
@@ -879,6 +898,7 @@ public final class MainWindow {
 
     }
 
+    /** Constructs the library navigation sidebar. */
     private VBox createSidebar() {
         Label libraryHeading = createSectionHeading("LIBRARY");
 
@@ -926,6 +946,7 @@ public final class MainWindow {
         return sidebarPane;
     }
 
+    /** Constructs the library and search-result list pane. */
     private BorderPane createDocumentListPane() {
         documentPaneTitle = new Label("Documents");
         documentPaneTitle.getStyleClass().add("pane-title");
@@ -941,6 +962,7 @@ public final class MainWindow {
         sortBox.getStyleClass().add("document-sort-box");
 
         sortBox.setConverter(new StringConverter<>() {
+            /** {@inheritDoc} */
             @Override
             public String toString(MainViewModel.DocumentSort sort) {
                 if (sort == null) {
@@ -955,6 +977,7 @@ public final class MainWindow {
                 };
             }
 
+            /** {@inheritDoc} */
             @Override
             public MainViewModel.DocumentSort fromString(String value) {
                 throw new UnsupportedOperationException();
@@ -1002,6 +1025,7 @@ public final class MainWindow {
         return pane;
     }
 
+    /** Constructs the empty search-results placeholder. */
     private VBox createSearchPlaceholder() {
         Label symbol = new Label("⌕");
         symbol.getStyleClass().add("list-placeholder-symbol");
@@ -1025,6 +1049,7 @@ public final class MainWindow {
         return placeholder;
     }
 
+    /** Constructs the pane containing the document viewer. */
     private BorderPane createViewerPane() {
         BorderPane viewer = new BorderPane();
 
@@ -1035,6 +1060,7 @@ public final class MainWindow {
     }
 
 
+    /** Constructs the welcome state shown for an empty library. */
     private VBox createWelcomeState() {
         Label plusBadge = new Label("+");
 
@@ -1082,6 +1108,7 @@ public final class MainWindow {
         return welcome;
     }
 
+    /** Constructs the overlay shown while the application service starts. */
     private StackPane createStartupOverlay() {
         startupProgress.setMaxSize(42, 42);
 
@@ -1112,6 +1139,7 @@ public final class MainWindow {
         return overlay;
     }
 
+    /** Constructs the empty document-list placeholder. */
     private VBox createListPlaceholder() {
         Label symbol = new Label("≡");
 
@@ -1136,6 +1164,7 @@ public final class MainWindow {
         return placeholder;
     }
 
+    /** Constructs the status bar and unfinished-query warning. */
     private HBox createStatusBar() {
         statusDocumentCount = new Label("0 documents");
         statusDocumentCount.getStyleClass().add("status-text");
@@ -1167,6 +1196,7 @@ public final class MainWindow {
         return statusBar;
     }
 
+    /** Constructs an import button wired to the file-selection workflow. */
     private Button createImportButton(String text) {
         Button button = new Button(text);
 
@@ -1181,6 +1211,7 @@ public final class MainWindow {
         return button;
     }
 
+    /** Constructs an accessible toolbar icon button. */
     private Button createIconButton(String text, String accessibleText) {
         Button button = new Button(text);
 
@@ -1193,6 +1224,7 @@ public final class MainWindow {
         return button;
     }
 
+    /** Constructs a styled sidebar section heading. */
     private Label createSectionHeading(String text) {
         Label heading = new Label(text);
 
@@ -1201,6 +1233,7 @@ public final class MainWindow {
         return heading;
     }
 
+    /** Constructs a sidebar navigation toggle in the supplied group. */
     private ToggleButton createNavigationButton(String text, ToggleGroup group) {
         ToggleButton button = new ToggleButton(text);
 
@@ -1212,6 +1245,7 @@ public final class MainWindow {
         return button;
     }
 
+    /** Constructs a full-width sidebar action button. */
     private Button createSidebarAction(String text) {
         Button button = new Button(text);
 
@@ -1222,6 +1256,7 @@ public final class MainWindow {
         return button;
     }
 
+    /** Constructs vertical spacing between sidebar sections. */
     private Region createSectionSpacing() {
         Region spacing = new Region();
 
@@ -1230,6 +1265,7 @@ public final class MainWindow {
         return spacing;
     }
 
+    /** Shows rename and delete actions for the current document selection. */
     private void showDocumentActions(Button owner) {
         DocumentSummary selected = selectedDocumentSummary();
 
@@ -1264,6 +1300,7 @@ public final class MainWindow {
         menu.show(owner, Side.BOTTOM, 0, 4);
     }
 
+    /** Returns the currently selected library document or search-result summary. */
     private DocumentSummary selectedDocumentSummary() {
         if (searchMode) {
             SearchResult result = searchResultList.getSelectionModel().getSelectedItem();
@@ -1274,6 +1311,7 @@ public final class MainWindow {
         return documentList.getSelectionModel().getSelectedItem();
     }
 
+    /** Requests confirmation before deleting the selected document. */
     private void requestDeleteDocument(DocumentSummary document) {
         if (document == null || deleteInProgress || modalHost.isShowing()) {
             return;
@@ -1295,6 +1333,9 @@ public final class MainWindow {
         modalHost.show(confirmation.root());
     }
 
+    /**
+     * Deletes a document asynchronously, refreshes the library and restores the relevant selection.
+     */
     private void deleteDocument(DocumentSummary document) {
         if (deleteInProgress) {
             return;
@@ -1350,6 +1391,7 @@ public final class MainWindow {
                 );
     }
 
+    /** Reruns the current search after deletion and selects the nearest remaining result. */
     private void refreshSearchAfterDeletion(int previousIndex) {
         String currentQuery = searchField.getText();
 
@@ -1370,6 +1412,7 @@ public final class MainWindow {
                 );
     }
 
+    /** Selects the nearest remaining library document after a mutation. */
     private void selectNearestLibraryDocument(int previousIndex) {
         if (documentList.getItems().isEmpty()) {
             viewModel.selectDocument(null);
@@ -1382,6 +1425,7 @@ public final class MainWindow {
         documentList.getSelectionModel().select(index);
     }
 
+    /** Selects the nearest remaining search result after a mutation. */
     private void selectNearestSearchResult(int previousIndex) {
         if (searchResultList.getItems().isEmpty()) {
             viewModel.selectDocument(null);
@@ -1394,6 +1438,7 @@ public final class MainWindow {
         searchResultList.getSelectionModel().select(index);
     }
 
+    /** Toggles the sidebar and restores appropriate workspace divider positions. */
     private void toggleSidebar() {
         if (sidebarVisible) {
             workspace.getItems().remove(sidebar);
@@ -1408,6 +1453,7 @@ public final class MainWindow {
         sidebarVisible = !sidebarVisible;
     }
 
+    /** Enables or disables the available import entry points. */
     private void setImportDisabled(boolean disabled) {
         if (toolbarImportButton != null) {
             toolbarImportButton.setDisable(disabled);
@@ -1418,6 +1464,7 @@ public final class MainWindow {
         }
     }
 
+    /** Shows startup progress over the application workspace. */
     private void showStartupOverlay() {
         startupOverlay.setVisible(true);
         startupOverlay.setManaged(true);
@@ -1426,6 +1473,7 @@ public final class MainWindow {
         startupProgress.setManaged(true);
     }
 
+    /** Hides the startup progress overlay. */
     private void hideStartupOverlay() {
         startupOverlay.setVisible(false);
         startupOverlay.setManaged(false);
@@ -1434,6 +1482,7 @@ public final class MainWindow {
         startupProgress.setManaged(false);
     }
 
+    /** Updates the status text and indicator style. */
     private void setStatus(String text, String dotStyle) {
         statusText.setText(text);
 
@@ -1442,6 +1491,7 @@ public final class MainWindow {
         statusDot.getStyleClass().add(dotStyle);
     }
 
+    /** Shows a fallback dialog when the import workflow is unavailable. */
     private void showImportPlaceholder() {
         MessagePane message = new MessagePane(
                 "Import notes",
@@ -1453,6 +1503,7 @@ public final class MainWindow {
         modalHost.show(message.root());
     }
 
+    /** Opens the import chooser and starts importing the selected files. */
     private void handleImportRequest() {
         if (importCoordinator == null) {
             showImportPlaceholder();
@@ -1504,6 +1555,7 @@ public final class MainWindow {
         delay.play();
     }
 
+    /** Tracks file-chooser visibility and updates import controls accordingly. */
     private void setFileChooserOpening(boolean opening) {
         fileChooserOpening = opening;
 
@@ -1526,6 +1578,7 @@ public final class MainWindow {
         }
     }
 
+    /** Creates a file chooser configured for the supported import extensions. */
     private FileChooser createImportFileChooser() {
         FileChooser chooser = new FileChooser();
 
@@ -1574,6 +1627,9 @@ public final class MainWindow {
         return chooser;
     }
 
+    /**
+     * Starts an asynchronous import batch and coordinates its progress and completion UI.
+     */
     private void importFiles(List<Path> sources) {
         importInProgress = true;
         setImportDisabled(true);
@@ -1602,6 +1658,9 @@ public final class MainWindow {
                 );
     }
 
+    /**
+     * Completes an import by returning to the library, refreshing it and selecting the last imported document.
+     */
     private void finishImport(ImportBatchResult result) {
         if (result.importedDocuments().isEmpty()) {
             importInProgress = false;
@@ -1637,6 +1696,7 @@ public final class MainWindow {
         );
     }
 
+    /** Selects the visible library document with the given identifier, when present. */
     private void selectDocument(long documentId) {
         documentList.getItems().stream()
                 .filter(document -> document.id() == documentId)
@@ -1674,6 +1734,7 @@ public final class MainWindow {
         });
     }
 
+    /** Installs context-menu and keyboard actions for library and search selections. */
     private void configureDocumentActions() {
 
         MenuItem renameDocumentItem = new MenuItem("Rename note");
@@ -1795,11 +1856,13 @@ public final class MainWindow {
         });
     }
 
+    /** Identifies keyboard events that request document deletion. */
     private static boolean isDeleteKey(KeyEvent event) {
         return event.getCode() == KeyCode.DELETE
                 || event.getCode() == KeyCode.BACK_SPACE;
     }
 
+    /** Requests a replacement title before renaming a document. */
     private void requestRenameDocument(DocumentSummary document) {
         if (document == null
                 || renameInProgress
@@ -1824,6 +1887,9 @@ public final class MainWindow {
         modalHost.show(input.root());
     }
 
+    /**
+     * Renames a document asynchronously, refreshes the library and restores its current selection.
+     */
     private void renameDocument(
             DocumentSummary document,
             String newTitle
@@ -1894,6 +1960,7 @@ public final class MainWindow {
     }
 
 
+    /** Reruns the current search and reselects the renamed document. */
     private void refreshSearchAfterRename(long documentId) {
         String currentQuery = searchField.getText();
 
@@ -1914,6 +1981,7 @@ public final class MainWindow {
                 );
     }
 
+    /** Selects the search result for the given document identifier, when present. */
     private void selectSearchResult(long documentId) {
         searchResultList.getItems().stream()
                 .filter(result ->
@@ -1943,6 +2011,7 @@ public final class MainWindow {
         aboutButton.setOnAction(event -> showSettings(true));
     }
 
+    /** Replaces the workspace with settings, optionally opening the About section. */
     private void showSettings(boolean showAbout) {
         settingsVisible = true;
 
@@ -1957,6 +2026,7 @@ public final class MainWindow {
         }
     }
 
+    /** Restores the main workspace after leaving settings. */
     private void hideSettings() {
         settingsVisible = false;
 
@@ -1967,6 +2037,7 @@ public final class MainWindow {
 
 
 
+    /** Unwraps asynchronous completion failures to their underlying cause. */
     private static Throwable unwrapFailure(Throwable failure) {
         Throwable current = failure;
 
@@ -1977,6 +2048,7 @@ public final class MainWindow {
         return current;
     }
 
+    /** Returns a useful failure message, falling back when no message is available. */
     private static String displayMessage(Throwable failure) {
         if (failure == null) {
             return "Unknown startup failure";

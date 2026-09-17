@@ -223,6 +223,7 @@ public final class DocumentViewer {
         sourceContent.clear();
     }
 
+    /** Renders the current document in the selected preview or source mode. */
     private void renderContent() {
         if (document == null) {
             previewContent.showText(
@@ -261,6 +262,7 @@ public final class DocumentViewer {
         previewScroll.setVvalue(0);
     }
 
+    /** Converts known document MIME types to compact display labels. */
     private static String formatLabel(String format) {
         return switch (format) {
             case "text/plain" -> "TXT";

@@ -45,9 +45,11 @@ public final class GuiApplicationContext implements AutoCloseable {
         this(serviceFactory, createDefaultExecutor());
     }
 
-    /*
-     * Package-private constructor allows lifecycle tests to own
-     * their executor explicitly.
+    /**
+     * Creates a context with an injected startup executor owned by the context.
+     *
+     * @param serviceFactory factory used to open application services
+     * @param executor executor used for asynchronous service initialization
      */
     GuiApplicationContext(GuiServiceFactory serviceFactory, ExecutorService executor) {
         this.serviceFactory = Objects.requireNonNull(serviceFactory, "Service factory must not be null");
@@ -110,6 +112,7 @@ public final class GuiApplicationContext implements AutoCloseable {
         return Optional.ofNullable(databaseFile.get());
     }
 
+    /** Opens the service asynchronously while coordinating startup and closure races. */
     private NoteIndexService openService(Path databaseFile) {
         try {
             if (closed.get()) {
@@ -156,6 +159,7 @@ public final class GuiApplicationContext implements AutoCloseable {
         }
     }
 
+    /** Creates the database parent directory when the configured path has one. */
     private static void createDatabaseParentDirectory(Path databaseFile) throws IOException {
         Path parent = databaseFile.getParent();
         if (parent != null) {
@@ -189,6 +193,7 @@ public final class GuiApplicationContext implements AutoCloseable {
         }
     }
 
+    /** Creates the daemon executor owned by the GUI startup lifecycle. */
     private static ExecutorService createDefaultExecutor() {
         return Executors.newSingleThreadExecutor(
                 runnable -> {

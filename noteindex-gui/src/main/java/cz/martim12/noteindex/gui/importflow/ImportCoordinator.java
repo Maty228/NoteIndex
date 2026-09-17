@@ -39,6 +39,14 @@ public final class ImportCoordinator implements AutoCloseable {
         this(service, createDefaultExecutor(), Platform::runLater);
     }
 
+    /**
+     * Creates a coordinator with injected import execution and UI dispatch.
+     * The coordinator owns and shuts down the supplied executor.
+     *
+     * @param service application service used for imports
+     * @param executor executor used for sequential background imports
+     * @param uiExecutor dispatcher used for progress callbacks
+     */
     ImportCoordinator(NoteIndexService service, ExecutorService executor, Consumer<Runnable> uiExecutor) {
         this.service = Objects.requireNonNull(service, "Service must not be null");
         this.executor = Objects.requireNonNull(executor, "Executor must not be null");
@@ -128,6 +136,7 @@ public final class ImportCoordinator implements AutoCloseable {
         ExecutorShutdown.shutdownNowAndAwait(executor);
     }
 
+    /** Converts source paths to distinct absolute normalized paths in input order. */
     private static List<Path> normalizeSources(List<Path> sources) {
         LinkedHashSet<Path> normalized = new LinkedHashSet<>();
 
@@ -140,12 +149,14 @@ public final class ImportCoordinator implements AutoCloseable {
         return List.copyOf(normalized);
     }
 
+    /** Rejects operations after the coordinator has been closed. */
     private void ensureOpen() {
         if (closed.get()) {
             throw new IllegalStateException("Import coordinator is closed");
         }
     }
 
+    /** Finds a useful message in a failure chain or uses its type as fallback. */
     private static String displayMessage(Throwable failure) {
         Throwable current = failure;
 
@@ -166,6 +177,7 @@ public final class ImportCoordinator implements AutoCloseable {
         return failure.getClass().getSimpleName();
     }
 
+    /** Creates the daemon executor owned by the default import coordinator. */
     private static ExecutorService createDefaultExecutor() {
         return Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "noteindex-gui-import");

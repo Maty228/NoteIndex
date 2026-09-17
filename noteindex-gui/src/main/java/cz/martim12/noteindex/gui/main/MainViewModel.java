@@ -104,6 +104,14 @@ public final class MainViewModel implements AutoCloseable {
         this(service, createDefaultExecutor(), Platform::runLater);
     }
 
+    /**
+     * Creates a view model with injected background execution and UI dispatch.
+     * The view model owns and shuts down the supplied executor.
+     *
+     * @param service application service used for document operations
+     * @param executor executor used for asynchronous document loading
+     * @param uiExecutor dispatcher used for observable-state updates
+     */
     MainViewModel(NoteIndexService service, ExecutorService executor, Consumer<Runnable> uiExecutor) {
         this.service = Objects.requireNonNull(service, "Service must not be null");
         this.executor = Objects.requireNonNull(executor, "Executor must not be null");
@@ -403,6 +411,7 @@ public final class MainViewModel implements AutoCloseable {
     }
 
 
+    /** Reapplies the active library filter and sort to the complete document list. */
     private void recomputeVisibleDocuments() {
         List<DocumentSummary> documents = switch (libraryView) {
             case ALL -> new ArrayList<>(allDocuments);
@@ -434,6 +443,7 @@ public final class MainViewModel implements AutoCloseable {
                 .toList());
     }
 
+    /** Unwraps asynchronous completion failures to their underlying cause. */
     private static Throwable unwrap(Throwable failure) {
         Throwable current = failure;
 
@@ -447,6 +457,7 @@ public final class MainViewModel implements AutoCloseable {
         return current;
     }
 
+    /** Rejects operations after the view model has been closed. */
     private void ensureOpen() {
         if (closed.get()) {
             throw new IllegalStateException("Main view model is closed");
@@ -466,6 +477,7 @@ public final class MainViewModel implements AutoCloseable {
         ExecutorShutdown.shutdownNowAndAwait(executor);
     }
 
+    /** Creates the daemon executor owned by the default view model. */
     private static ExecutorService createDefaultExecutor() {
         return Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "noteindex-gui-main");

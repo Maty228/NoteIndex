@@ -97,6 +97,7 @@ public final class SettingsView {
         Platform.runLater(() -> scrollPane.setVvalue(1));
     }
 
+    /** Creates the settings header and navigation control. */
     private HBox createHeader() {
         Button backButton = new Button("←  Back");
         backButton.getStyleClass().add("settings-back-button");
@@ -115,6 +116,7 @@ public final class SettingsView {
         return header;
     }
 
+    /** Creates the appearance preference section. */
     private VBox createAppearanceSection(GuiPreferences preferences) {
         ComboBox<ThemePreference> themeBox = new ComboBox<>();
 
@@ -123,6 +125,7 @@ public final class SettingsView {
         themeBox.setPrefWidth(150);
 
         themeBox.setConverter(new StringConverter<>() {
+            /** {@inheritDoc} */
             @Override
             public String toString(ThemePreference theme) {
                 if (theme == null) {
@@ -136,6 +139,7 @@ public final class SettingsView {
                 };
             }
 
+            /** {@inheritDoc} */
             @Override
             public ThemePreference fromString(String value) {
                 throw new UnsupportedOperationException();
@@ -158,6 +162,7 @@ public final class SettingsView {
         );
     }
 
+    /** Creates the search preference section. */
     private VBox createSearchSection(GuiPreferences preferences) {
         ComboBox<Integer> resultLimitBox = new ComboBox<>();
 
@@ -189,6 +194,7 @@ public final class SettingsView {
         );
     }
 
+    /** Creates the library information section. */
     private VBox createLibrarySection(
             Path databaseFile,
             ReadOnlyIntegerProperty documentCount
@@ -232,6 +238,7 @@ public final class SettingsView {
         );
     }
 
+    /** Creates the application and runtime information section. */
     private VBox createAboutSection() {
         Label version = new Label(applicationVersion());
         version.getStyleClass().add("settings-value");
@@ -278,6 +285,7 @@ public final class SettingsView {
         );
     }
 
+    /** Creates a consistently styled settings section. */
     private VBox createSection(String title, Node... children) {
         Label heading = new Label(title);
         heading.getStyleClass().add("settings-section-title");
@@ -291,6 +299,7 @@ public final class SettingsView {
         return section;
     }
 
+    /** Creates a labeled settings row containing the supplied control. */
     private HBox createSettingRow(
             String titleText,
             String descriptionText,
@@ -325,6 +334,7 @@ public final class SettingsView {
         return row;
     }
 
+    /** Returns the module version or a development fallback when no version is present. */
     private static String applicationVersion() {
         return SettingsView.class.getModule()
                 .getDescriptor()

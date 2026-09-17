@@ -92,6 +92,7 @@ public final class ImportFileSupport {
 
     }
 
+    /** Extracts a normalized filename extension, or an empty string if absent. */
     private static String extensionOf(Path path) {
         Path fileName = path.getFileName();
 
@@ -109,6 +110,7 @@ public final class ImportFileSupport {
         return normalizeExtension(name.substring(separator + 1));
     }
 
+    /** Normalizes an extension to lowercase without wildcard or dot prefixes. */
     private static String normalizeExtension(String extension) {
         String normalized = extension.trim().toLowerCase(Locale.ROOT);
 
@@ -121,6 +123,7 @@ public final class ImportFileSupport {
         return normalized;
     }
 
+    /** Returns the preferred display order for supported file formats. */
     private static int formatPriority(String extension) {
         return switch (extension) {
             case "txt" -> 1;

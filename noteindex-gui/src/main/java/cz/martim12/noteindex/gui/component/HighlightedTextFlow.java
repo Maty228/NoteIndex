@@ -134,6 +134,7 @@ public final class HighlightedTextFlow extends StackPane {
         requestLayout();
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void layoutChildren() {
         super.layoutChildren();
@@ -141,6 +142,7 @@ public final class HighlightedTextFlow extends StackPane {
         rebuildHighlightBackgrounds();
     }
 
+    /** Rebuilds highlight geometry from the current text layout and ranges. */
     private void rebuildHighlightBackgrounds() {
         if (updatingHighlights) {
             return;
@@ -185,6 +187,7 @@ public final class HighlightedTextFlow extends StackPane {
         }
     }
 
+    /** Creates a text node with the appropriate normal or matched style. */
     private static Text createText(
             String value,
             boolean highlighted
@@ -204,6 +207,7 @@ public final class HighlightedTextFlow extends StackPane {
         return text;
     }
 
+    /** Normalizes valid ranges and merges overlaps before rendering highlights. */
     private static List<HighlightRange> mergeRanges(
             String text,
             List<HighlightRange> highlights

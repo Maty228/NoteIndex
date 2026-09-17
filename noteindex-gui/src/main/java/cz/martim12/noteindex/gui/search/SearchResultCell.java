@@ -82,6 +82,7 @@ public final class SearchResultCell extends ListCell<SearchResult>{
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void updateItem(SearchResult result, boolean empty) {
         super.updateItem(result, empty);
@@ -112,6 +113,7 @@ public final class SearchResultCell extends ListCell<SearchResult>{
         setGraphic(content);
     }
 
+    /** Builds the bounded snippet and translates highlights into its displayed coordinates. */
     private static DisplayedSnippet displayedSnippet(SearchResult result) {
         String text = result.snippet();
 
@@ -197,6 +199,7 @@ public final class SearchResultCell extends ListCell<SearchResult>{
         );
     }
 
+    /** Moves a proposed snippet start backward to a word boundary. */
     private static int alignSnippetStart(
             String text,
             int start
@@ -213,6 +216,7 @@ public final class SearchResultCell extends ListCell<SearchResult>{
         return start;
     }
 
+    /** Moves a proposed snippet end forward to a word boundary. */
     private static int alignSnippetEnd(
             String text,
             int end
@@ -228,11 +232,15 @@ public final class SearchResultCell extends ListCell<SearchResult>{
         return end;
     }
 
+    /**
+     * Displayed snippet text together with highlight ranges adjusted to that text.
+     */
     private record DisplayedSnippet(
             String text,
             List<HighlightRange> highlights
     ) {}
 
+    /** Converts known document MIME types to compact display labels. */
     private static String formatLabel(String format) {
         return switch (format) {
             case "text/plain" -> "TXT";

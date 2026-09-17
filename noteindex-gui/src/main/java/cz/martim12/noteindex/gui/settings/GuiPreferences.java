@@ -46,6 +46,7 @@ public final class GuiPreferences {
         this(Preferences.userNodeForPackage(GuiPreferences.class).node("settings"));
     }
 
+    /** Creates GUI preferences backed by the supplied preference node. */
     GuiPreferences(Preferences preferences) {
         this.preferences = Objects.requireNonNull(preferences, "Preferences must not be null");
 
@@ -119,6 +120,7 @@ public final class GuiPreferences {
         preferences.putInt(SEARCH_RESULT_LIMIT_KEY, limit);
     }
 
+    /** Loads the stored theme, falling back to the default for missing or malformed values. */
     private ThemePreference loadTheme() {
         String stored = preferences.get(THEME_KEY, DEFAULT_THEME.name());
 
@@ -129,6 +131,7 @@ public final class GuiPreferences {
         }
     }
 
+    /** Loads the stored result limit, falling back when the value is unsupported. */
     private int loadSearchResultLimit() {
         int stored = preferences.getInt(SEARCH_RESULT_LIMIT_KEY, DEFAULT_SEARCH_RESULT_LIMIT);
 

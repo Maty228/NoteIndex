@@ -32,6 +32,7 @@ public final class DocumentListCell extends ListCell<DocumentSummary>{
         content.getStyleClass().add("document-cell-content");
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void updateItem(DocumentSummary document, boolean empty) {
         super.updateItem(document, empty);
@@ -52,6 +53,7 @@ public final class DocumentListCell extends ListCell<DocumentSummary>{
         setGraphic(content);
     }
 
+    /** Converts a document MIME type to its compact display label. */
     private static String formatLabel(String format) {
         return switch(format) {
             case "text/plain" -> "TXT";

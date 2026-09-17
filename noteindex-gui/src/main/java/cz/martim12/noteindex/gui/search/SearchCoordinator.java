@@ -69,6 +69,10 @@ public final class SearchCoordinator implements AutoCloseable {
         );
     }
 
+    /**
+     * Creates a coordinator with injected scheduling and UI-dispatch dependencies.
+     * The coordinator owns the supplied executor and shuts it down on close.
+     */
     SearchCoordinator(
             NoteIndexService service,
             ScheduledExecutorService executor,
@@ -211,6 +215,9 @@ public final class SearchCoordinator implements AutoCloseable {
         search("");
     }
 
+    /**
+     * Executes a scheduled search and publishes its outcome only if its generation is still current.
+     */
     private void executeSearch(String queryText, long currentGeneration, CompletableFuture<Void> completion) {
         try {
             int currentResultLimit = resultLimit;
@@ -251,6 +258,8 @@ public final class SearchCoordinator implements AutoCloseable {
             });
         }
     }
+
+    /** Cancels the scheduled search and completion associated with the superseded generation. */
     private void cancelPendingSearch() {
         ScheduledFuture<?> pending = pendingSearch.getAndSet(null);
 
@@ -265,6 +274,7 @@ public final class SearchCoordinator implements AutoCloseable {
         }
     }
 
+    /** Rejects operations after this coordinator has been closed. */
     private void ensureOpen() {
         if (closed.get()) {
             throw new IllegalStateException("Search coordinator is closed");
@@ -286,6 +296,7 @@ public final class SearchCoordinator implements AutoCloseable {
         ExecutorShutdown.shutdownNowAndAwait(executor);
     }
 
+    /** Creates the owned single-threaded daemon executor used for debounced searches. */
     private static ScheduledExecutorService createDefaultExecutor() {
         return Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread thread = new Thread(runnable, "noteindex-gui-search");
@@ -317,6 +328,7 @@ public final class SearchCoordinator implements AutoCloseable {
         this.resultLimit = resultLimit;
     }
 
+    /** Determines whether a query contains an unmatched quotation mark. */
     private static boolean hasUnclosedQuote(String query) {
         boolean quoted = false;
 

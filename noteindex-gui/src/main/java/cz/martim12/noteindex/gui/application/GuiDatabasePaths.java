@@ -7,6 +7,7 @@ import java.nio.file.Path;
  */
 public final class GuiDatabasePaths {
 
+    /** Prevents instantiation. */
     private GuiDatabasePaths() {}
 
     /**

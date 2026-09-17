@@ -11,6 +11,7 @@ public final class ExecutorShutdown {
 
     private static final long TERMINATION_TIMEOUT_MILLIS = 250;
 
+    /** Prevents instantiation. */
     private ExecutorShutdown() {}
 
     /**
