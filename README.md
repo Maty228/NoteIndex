@@ -57,6 +57,12 @@ The root Maven project contains seven modules:
 - **`noteindex-gui`** - JavaFX desktop interface, including library browsing, imports, search results, document viewing, and settings.
 - **`noteindex-cli`** - Command-line parser, commands, output formatting, and executable CLI entry point.
 
+Additional evaluation resources are included outside the Maven modules:
+
+- **`examples/demo-notes/`** - A small demonstration library containing 8 plain-text and 8 Markdown study notes.
+- **`scripts/setup-demo.sh`** - Creates a fresh demonstration SQLite database and imports all example documents through the CLI.
+- **`scripts/run-demo-gui.sh`** - Opens the JavaFX interface using the demonstration database, creating it first when necessary.
+- 
 ## Building the Project
 
 Run Maven commands from the repository root.
@@ -98,6 +104,14 @@ mvn -f noteindex-gui/pom.xml javafx:run
 
 The application opens a startup view while it initializes the local SQLite database and rebuilds the search index. When initialization finishes, the main library window becomes available.
 
+For a ready-to-use evaluation library, use the [Quick Demo](#quick-demo) instead:
+
+```bash
+./scripts/run-demo-gui.sh
+```
+
+That launcher selects the generated target/demo/noteindex.db database for the GUI without modifying the normal database under ~/.noteindex/.
+
 ![NoteIndex library with document filters, list, and preview](images/main-library-overview.png)
 
 ### Command-Line Interface
@@ -111,6 +125,63 @@ mvn -f noteindex-cli/pom.xml exec:java \
 ```
 
 Replace `help` in `-Dexec.args` with the desired CLI arguments. For example, use `-Dexec.args="list"` to list imported documents. The available commands are documented in the [CLI Reference](#cli-reference).
+
+## Quick Demo
+
+The repository includes a demonstration library containing **16 study notes**:
+
+- 8 plain-text (`.txt`) documents;
+- 8 Markdown (`.md`) documents.
+
+The files are stored under:
+
+```text
+examples/demo-notes/
+```
+
+The quickest way to evaluate NoteIndex is:
+
+```bash
+./scripts/run-demo-gui.sh
+```
+
+On the first run, the script automatically:
+
+1. installs the Maven modules required for individual module execution;
+2. creates a fresh SQLite database at `target/demo/noteindex.db`;
+3. imports all 16 example documents using the NoteIndex CLI;
+4. lists the imported documents;
+5. performs an example search for `virtual`;
+6. starts the JavaFX application using the generated demo database.
+
+The demo setup is isolated from the normal user library. It does **not** modify the default database at `~/.noteindex/noteindex.db`.
+
+To create or reset the demo database without starting the GUI, run:
+
+```bash
+./scripts/setup-demo.sh
+```
+
+Running the setup script again deletes only the generated `target/demo/` directory and recreates the demonstration database from the example source files.
+
+The generated database is a local demo/build artifact and is intentionally not included in the repository or submission archive.
+
+### Suggested Demo Searches
+
+After the application opens, useful searches include:
+
+| Query | Demonstrates |
+|---|---|
+| `virtual` | Normal ranked full-text search |
+| `neur` | Prefix matching, for example `neural` |
+| `"virtual machine"` | Exact quoted-phrase matching |
+| `index` | Results across database and information-retrieval notes |
+| `concurr` | Prefix matching across concurrency-related notes |
+
+The demo library can also be used to verify the **All Notes**, **Recent**, **TXT**, and **Markdown** filters, document preview/source switching, renaming, deletion, and theme settings.
+
+> The helper scripts use Bash and are intended for macOS/Linux or another Bash-compatible environment. The regular Maven commands documented below remain available independently of these scripts.
+
 
 ## GUI Usage Guide
 
@@ -282,6 +353,9 @@ NoteIndex stores imported documents locally in SQLite. Both the GUI and CLI use 
 The `~` represents the current user's home directory. NoteIndex creates the parent directory and initializes or migrates the database schema automatically, so no database server or manual schema setup is required.
 
 The CLI can use another database with `--database <file>`. The GUI settings page displays the exact database currently in use. The full-text index is not stored as a separate permanent file; it is rebuilt in memory from SQLite at startup.
+
+The optional demo scripts use a separate database at `target/demo/noteindex.db`. This database is generated from the files in `examples/demo-notes/` and is never used unless the demo setup or demo GUI launcher is explicitly run. It does not replace or modify the normal database under `~/.noteindex/`.
+
 
 ## Testing
 

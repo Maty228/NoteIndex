@@ -1,0 +1,11 @@
+Concurrent Programming — Synchronization
+
+Concurrent programs allow multiple tasks to make progress during overlapping periods of time.
+
+Shared mutable state introduces the possibility of race conditions when operations interleave unexpectedly.
+
+Mutexes and locks provide mutual exclusion. Read-write locks allow multiple readers to proceed concurrently while writers require exclusive access.
+
+Deadlocks can occur when tasks wait indefinitely for resources held by one another.
+
+Thread-safe design requires clear ownership, careful synchronization, and well-defined lifecycle behavior.

@@ -1,0 +1,11 @@
+Operating Systems — Virtual Memory
+
+Virtual memory gives each process the illusion of having a large contiguous address space.
+
+The operating system translates virtual addresses to physical addresses using page tables. Memory is divided into fixed-size pages, while physical memory is divided into page frames.
+
+When a requested page is not currently in memory, a page fault occurs. The operating system may load the page from secondary storage and possibly evict another page.
+
+Common page replacement strategies include FIFO, LRU, and approximations of LRU.
+
+Virtual memory provides isolation, simplifies memory allocation, and allows programs to use more memory than the available physical RAM.

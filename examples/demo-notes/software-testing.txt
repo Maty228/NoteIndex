@@ -1,0 +1,11 @@
+Software Engineering — Testing
+
+Automated testing helps verify that software continues to satisfy its expected behavior as the implementation evolves.
+
+Unit tests isolate small components, while integration tests verify interactions between multiple subsystems.
+
+Regression tests capture previously discovered bugs so they cannot silently reappear.
+
+Good tests should be deterministic, focused, readable, and independent from unnecessary external state.
+
+Test doubles such as stubs and fakes can provide controlled behavior when testing services, persistence boundaries, or asynchronous workflows.

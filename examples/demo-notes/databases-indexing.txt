@@ -1,0 +1,11 @@
+Database Systems — Indexing
+
+Database indexes accelerate queries by maintaining additional data structures that make records easier to locate.
+
+A B-tree and its variants maintain sorted keys and support logarithmic search, insertion, and deletion. B+ trees are especially common in database systems because internal nodes store keys while records are kept in leaf nodes.
+
+Indexes improve read performance but introduce storage and write overhead.
+
+A database query planner decides whether an index is beneficial based on estimated selectivity and execution cost.
+
+Composite indexes contain multiple columns, and the order of those columns affects which queries can efficiently use the index.

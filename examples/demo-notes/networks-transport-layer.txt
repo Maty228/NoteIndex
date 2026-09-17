@@ -1,0 +1,11 @@
+Computer Networks — Transport Layer
+
+The transport layer provides end-to-end communication between applications.
+
+TCP is connection-oriented and provides reliable ordered delivery. It uses sequence numbers, acknowledgements, retransmissions, flow control, and congestion control.
+
+UDP is connectionless and provides a lightweight datagram service without reliability guarantees.
+
+TCP establishes a connection using the three-way handshake: SYN, SYN-ACK, and ACK.
+
+Applications choose between TCP and UDP depending on latency, reliability, ordering, and protocol requirements.

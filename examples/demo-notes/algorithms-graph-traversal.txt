@@ -1,0 +1,11 @@
+Algorithms — Graph Traversal
+
+Graph traversal algorithms systematically visit vertices and edges in a graph.
+
+Breadth-first search (BFS) explores vertices level by level. It uses a queue and is useful for finding shortest paths in unweighted graphs.
+
+Depth-first search (DFS) explores one branch as deeply as possible before backtracking. It is commonly implemented using recursion or an explicit stack.
+
+Both algorithms have time complexity O(V + E) when adjacency lists are used.
+
+Typical applications include connectivity testing, cycle detection, topological sorting, and path finding.

@@ -1,0 +1,11 @@
+Java — Virtual Machine
+
+The Java Virtual Machine executes Java bytecode produced by the Java compiler.
+
+A class loader loads classes into the runtime, where bytecode verification checks structural and type-safety constraints.
+
+The JVM manages several runtime memory areas, including the heap, thread stacks, and metaspace.
+
+Objects are dynamically allocated on the heap. Garbage collectors reclaim objects that are no longer reachable.
+
+Modern JVMs use just-in-time compilation to translate frequently executed bytecode into optimized native machine code.

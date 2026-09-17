@@ -1,0 +1,11 @@
+Computer Security — Cryptography
+
+Cryptography protects information using mathematical techniques.
+
+Symmetric encryption uses the same secret key for encryption and decryption. AES is a widely used symmetric block cipher.
+
+Asymmetric cryptography uses a public and private key pair. RSA and elliptic-curve cryptography are common examples.
+
+Cryptographic hash functions produce fixed-size digests and are designed to make collisions and preimage attacks computationally difficult.
+
+Digital signatures provide authenticity and integrity by combining hashing with public-key cryptography.
