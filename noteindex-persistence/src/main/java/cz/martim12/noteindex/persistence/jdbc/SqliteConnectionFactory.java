@@ -65,6 +65,7 @@ public final class SqliteConnectionFactory {
         return databaseFile;
     }
 
+    /** Creates the database parent directory when the configured path has one. */
     private void createParentDirectory() {
         Path parent = databaseFile.getParent();
 
@@ -82,6 +83,7 @@ public final class SqliteConnectionFactory {
         }
     }
 
+    /** Applies the SQLite settings required by repository operations. */
     private static void configureConnection(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.execute("PRAGMA foreign_keys = ON");
@@ -90,6 +92,10 @@ public final class SqliteConnectionFactory {
         }
     }
 
+    /**
+     * Closes a partially configured connection and suppresses any close failure
+     * onto the original connection exception.
+     */
     private static void closeAfterFailure(Connection connection, SQLException exception) {
         if (connection == null) {
             return;

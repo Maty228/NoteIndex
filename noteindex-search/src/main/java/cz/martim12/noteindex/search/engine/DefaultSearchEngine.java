@@ -121,6 +121,7 @@ public final class DefaultSearchEngine implements SearchEngine {
         return List.copyOf(hits.subList(0, limit));
     }
 
+    /** Counts required-phrase occurrences by candidate document. */
     private Map<Long, Integer> collectPhraseOccurrences(ParsedQuery query) {
         if (!query.hasRequiredPhrases()) {
             return Map.of();
@@ -137,6 +138,7 @@ public final class DefaultSearchEngine implements SearchEngine {
         return Map.copyOf(occurrencesByDocument);
     }
 
+    /** Validates, deduplicates and defensively copies searchable fields. */
     private static List<FieldName> copyFields(Collection<FieldName> fields) {
         Objects.requireNonNull(fields, "Search fields must not be null");
 

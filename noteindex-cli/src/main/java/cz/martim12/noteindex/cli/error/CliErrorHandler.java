@@ -47,6 +47,7 @@ public final class CliErrorHandler {
         return CliExitCode.FAILURE;
     }
 
+    /** Finds the first non-blank message in an exception's cause chain. */
     static String displayMessage(Throwable exception) {
         Objects.requireNonNull(exception, "Exception must not be null");
         Throwable current = exception;

@@ -23,6 +23,7 @@ import java.util.Objects;
  */
 public final class SearchRuntimes {
 
+    /** Prevents instantiation. */
     private SearchRuntimes() {}
 
     /**

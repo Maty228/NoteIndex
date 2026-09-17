@@ -81,12 +81,14 @@ public final class DatabaseInitializer {
         }
     }
 
+    /** Creates the documents table when it does not yet exist. */
     private void createDocumentsTable(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(CREATE_DOCUMENTS_TABLE);
         }
     }
 
+    /** Adds schema elements introduced after the initial documents table. */
     private void migrateDocumentsTable(Connection connection) throws SQLException {
         if (hasColumn(connection, "documents", "display_title")) {
             return;
@@ -97,6 +99,7 @@ public final class DatabaseInitializer {
         }
     }
 
+    /** Creates the indexes used by document queries. */
     private void createIndexes(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(CREATE_TITLE_INDEX);
@@ -104,6 +107,7 @@ public final class DatabaseInitializer {
         }
     }
 
+    /** Checks whether a SQLite table currently contains the named column. */
     private static boolean hasColumn(
             Connection connection,
             String table,
@@ -126,6 +130,10 @@ public final class DatabaseInitializer {
         }
     }
 
+    /**
+     * Rolls back initialization and suppresses any rollback failure onto the
+     * original database exception.
+     */
     private static void rollback(Connection connection, SQLException exception) {
         try {
             connection.rollback();

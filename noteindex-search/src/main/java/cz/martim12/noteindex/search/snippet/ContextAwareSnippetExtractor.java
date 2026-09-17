@@ -107,6 +107,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return toSnippet(text, bestWindow, matches);
     }
 
+    /** Collects phrase and standalone-term spans used for window selection. */
     private List<MatchSpan> findMatches(List<AnalyzedToken> tokens, ParsedQuery query) {
         LinkedHashSet<MatchSpan> matches =
                 new LinkedHashSet<>();
@@ -120,6 +121,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return List.copyOf(matches);
     }
 
+    /** Adds exact phrase spans using source offsets from the analyzed tokens. */
     private static void addPhraseMatches(List<AnalyzedToken> tokens, List<QueryPhrase> phrases, Set<MatchSpan> destination) {
         for (QueryPhrase phrase : phrases) {
             int phraseLength = phrase.length();
@@ -149,6 +151,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         }
     }
 
+    /** Tests whether a phrase matches the token sequence at the given position. */
     private static boolean matchesPhrase(List<AnalyzedToken> tokens, int start, QueryPhrase phrase) {
         for (int offset = 0; offset < phrase.length(); offset++) {
 
@@ -159,6 +162,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return true;
     }
 
+    /** Adds source spans for standalone terms under the configured match mode. */
     private void addStandaloneTermMatches(
             List<AnalyzedToken> tokens,
             List<String> queryTerms,
@@ -185,6 +189,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         }
     }
 
+    /** Adds individual term spans so phrase terms can also be highlighted. */
     private static void addPhraseTermMatches(
             List<AnalyzedToken> tokens,
             List<QueryPhrase> phrases,
@@ -213,6 +218,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         }
     }
 
+    /** Tests an indexed term using exact or prefix matching as configured. */
     private boolean matchesStandaloneTerm(
             String indexedTerm,
             String queryTerm
@@ -226,6 +232,10 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         };
     }
 
+    /**
+     * Builds a word-aligned source window around a match without splitting an
+     * anchor that is longer than the preferred maximum length.
+     */
     private static TextWindow createWindow(String text, MatchSpan anchor, int maximumLength) {
         if (text.length() <= maximumLength) {
             return new TextWindow(0, text.length());
@@ -264,6 +274,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return new TextWindow(start, end);
     }
 
+    /** Moves a tentative start forward when it falls inside a token. */
     private static int alignStartToWordBoundary(String text, int start, int end) {
         while (start > 0 && start < end && isTokenCharacter(text.charAt(start - 1)) && isTokenCharacter(text.charAt(start))) {
             start++;
@@ -272,6 +283,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return start;
     }
 
+    /** Moves a tentative end backward when it falls inside a token. */
     private static int alignEndToWordBoundary(String text, int start, int end) {
         while (end < text.length() && end > start && isTokenCharacter(text.charAt(end - 1)) && isTokenCharacter(text.charAt(end))) {
             end--;
@@ -280,6 +292,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return end;
     }
 
+    /** Identifies characters that may form part of an analyzed token. */
     private static boolean isTokenCharacter(char character) {
         return Character.isLetterOrDigit(character)
                 || Character.getType(character)
@@ -288,6 +301,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
                 == Character.COMBINING_SPACING_MARK;
     }
 
+    /** Skips whitespace at the beginning of a candidate window. */
     private static int skipLeadingWhitespace(String text, int start, int end) {
         while (start < end && Character.isWhitespace(text.charAt(start))) {
             start++;
@@ -295,6 +309,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return start;
     }
 
+    /** Skips whitespace at the end of a candidate window. */
     private static int skipTrailingWhitespace(String text, int start, int end) {
         while (end > start && Character.isWhitespace(text.charAt(end - 1))) {
             end--;
@@ -302,6 +317,10 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return end;
     }
 
+    /**
+     * Scores a window by phrase occurrences, distinct terms and total term
+     * occurrences, retaining its start offset for deterministic tie-breaking.
+     */
     private static WindowScore scoreWindow(TextWindow window, List<MatchSpan> matches) {
         int phraseOccurrences = 0;
         int totalTermOccurrences = 0;
@@ -323,6 +342,7 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return new WindowScore(phraseOccurrences, distinctTerms.size(), totalTermOccurrences, window.startOffset());
     }
 
+    /** Creates a word-aligned leading snippet when no query matches exist. */
     private static Snippet fallbackSnippet(String text, int maximumLength) {
         int end = Math.min(text.length(), maximumLength);
 
@@ -336,6 +356,10 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         return new Snippet(text.substring(0, end), 0, end, false, end < text.length());
     }
 
+    /**
+     * Converts a source window to a snippet while preserving original source
+     * offsets for highlight mapping.
+     */
     private static Snippet toSnippet(String text, TextWindow window, List<MatchSpan> matches) {
         List<SnippetMatch> snippetMatches =
                 matches.stream()
@@ -361,17 +385,22 @@ public final class ContextAwareSnippetExtractor implements SnippetExtractor {
         );
     }
 
+    /** Represents one phrase or term match using source-text offsets. */
     private record MatchSpan(
             int startOffset, int endOffset, String term, boolean phrase
     ) {}
 
+    /** Represents a half-open source-text window selected for a snippet. */
     private record TextWindow(int startOffset, int endOffset) {
+        /** Checks whether a match lies completely inside this window. */
         private boolean contains(MatchSpan match) {
             return match.startOffset() >= startOffset && match.endOffset() <= endOffset;
         }
     }
 
+    /** Holds the ordered criteria used to compare candidate snippet windows. */
     private record WindowScore(int phraseOccurrences, int distinctTermCount, int totalTermOccurrences, int startOffset) {
+        /** Returns whether this score outranks another candidate window. */
         private boolean isBetterThan(WindowScore other) {
             if (phraseOccurrences != other.phraseOccurrences) {
                 return phraseOccurrences > other.phraseOccurrences;

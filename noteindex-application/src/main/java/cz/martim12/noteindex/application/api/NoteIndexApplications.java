@@ -28,6 +28,7 @@ public final class NoteIndexApplications {
      */
     public static final int DEFAULT_MAXIMUM_SNIPPET_LENGTH = 240;
 
+    /** Prevents instantiation. */
     private NoteIndexApplications() {}
 
     /**
@@ -65,6 +66,14 @@ public final class NoteIndexApplications {
     /**
      * Internal assembly method used by tests and alternative
      * runtime entry points.
+     *
+     * @param documentRepository authoritative document repository
+     * @param importerRegistry registry of available importer plugins
+     * @param searchRuntime search components owned by the created service
+     * @param maximumSnippetLength maximum generated snippet length
+     * @return assembled and initialized application service
+     * @throws NullPointerException if a required component is null
+     * @throws IllegalArgumentException if the snippet length is not positive
      */
     static NoteIndexService create(
             DocumentRepository documentRepository,
@@ -108,6 +117,10 @@ public final class NoteIndexApplications {
         }
     }
 
+    /**
+     * Closes a runtime after failed assembly and suppresses any close failure
+     * onto the original failure.
+     */
     private static void closeAfterAssemblyFailure(SearchRuntime searchRuntime, Throwable failure) {
         try {
             searchRuntime.close();

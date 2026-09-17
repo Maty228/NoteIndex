@@ -98,6 +98,7 @@ public class ImporterRegistry {
         return definitions;
     }
 
+    /** Builds and validates a registry definition from importer metadata. */
     private static ImporterDefinition createDefinition(DocumentImporter importer) {
         Class<?> importerClass = importer.getClass();
 
@@ -128,6 +129,7 @@ public class ImporterRegistry {
         return new ImporterDefinition(name, formatId, extensions, importer);
     }
 
+    /** Extracts and normalizes the extension used to resolve an importer. */
     private static String extractExtension(Path source){
         Path fileNamePath = source.getFileName();
 
@@ -144,11 +146,13 @@ public class ImporterRegistry {
         return normalizeExtension(fileName.substring(separator + 1));
     }
 
+    /** Normalizes an extension to lowercase without a leading dot. */
     private static String normalizeExtension(String extension) {
         String normalized = extension.trim().toLowerCase(Locale.ROOT);
         return normalized.startsWith(".") ? normalized.substring(1) : normalized;
     }
 
+    /** Validates and trims a required importer annotation property. */
     private static String requireText(String value, String property, Class<?> importerClass) {
         if (value == null || value.isBlank()) {
             throw new ImporterConfigurationException(

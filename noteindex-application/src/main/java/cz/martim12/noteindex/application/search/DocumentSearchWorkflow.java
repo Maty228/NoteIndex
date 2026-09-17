@@ -105,6 +105,7 @@ public final class DocumentSearchWorkflow {
         return List.copyOf(results);
     }
 
+    /** Combines a persisted document, ranked hit and extracted snippet. */
     private SearchResult createResult(Document document, SearchHit hit, ParsedQuery parsedQuery) {
         Snippet snippet =
                 snippetExtractor.extract(
@@ -122,6 +123,7 @@ public final class DocumentSearchWorkflow {
         );
     }
 
+    /** Converts snippet matches to highlight offsets in the complete content. */
     private static List<HighlightRange> contentHighlights(
             Snippet snippet
     ) {
@@ -137,6 +139,7 @@ public final class DocumentSearchWorkflow {
                 .toList();
     }
 
+    /** Converts fully visible matches to offsets in the displayed snippet. */
     private static List<HighlightRange> snippetHighlights(Snippet snippet) {
         int displayPrefixLength =
                 snippet.truncatedAtStart() ? 3 : 0;
@@ -164,6 +167,7 @@ public final class DocumentSearchWorkflow {
                 .toList();
     }
 
+    /** Creates the lightweight document information exposed in a search result. */
     private static DocumentSummary toSummary(Document document) {
         return new DocumentSummary(
                 document.id(),
@@ -173,6 +177,7 @@ public final class DocumentSearchWorkflow {
         );
     }
 
+    /** Checks whether a source match is fully contained in the snippet window. */
     private static boolean isFullyInsideSnippet(
             SnippetMatch match,
             Snippet snippet

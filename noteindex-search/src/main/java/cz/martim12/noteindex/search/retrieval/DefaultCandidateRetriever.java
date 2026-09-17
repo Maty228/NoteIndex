@@ -31,7 +31,13 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
 
     private final StandaloneTermMatchMode standaloneTermMatchMode;
 
-
+    /**
+     * Creates a candidate retriever using exact matching for standalone terms.
+     *
+     * @param indexReader source of indexed data
+     * @param phraseMatcher matcher for required phrases
+     * @param fields searchable fields
+     */
     public DefaultCandidateRetriever(
             IndexReader indexReader,
             PhraseMatcher phraseMatcher,
@@ -92,6 +98,7 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
         return retrieveTermCandidates(query);
     }
 
+    /** Returns the ordered union of documents matching standalone terms. */
     private List<Long> retrieveTermCandidates(ParsedQuery query) {
         NavigableSet<Long> candidates = new TreeSet<>();
 
@@ -111,6 +118,7 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
         return List.copyOf(candidates);
     }
 
+    /** Resolves exact or prefix-expanded indexed terms for one query term. */
     private List<String> matchingTerms(
             String queryTerm,
             FieldName field
@@ -126,6 +134,7 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
         };
     }
 
+    /** Intersects document sets so every required phrase remains mandatory. */
     private List<Long> retrieveRequiredPhraseCandidates(ParsedQuery query) {
         NavigableSet<Long> candidates = null;
 
@@ -151,6 +160,7 @@ public final class DefaultCandidateRetriever implements CandidateRetriever {
         return candidates == null ? List.of() : List.copyOf(candidates);
     }
 
+    /** Validates, deduplicates and defensively copies searchable fields. */
     private static List<FieldName> copyFields(Collection<FieldName> fields) {
 
         Objects.requireNonNull(fields, "Search fields must not be null");

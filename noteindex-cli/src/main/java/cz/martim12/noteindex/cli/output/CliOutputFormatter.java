@@ -15,6 +15,7 @@ import java.util.Set;
  */
 public final class CliOutputFormatter {
 
+    /** Prevents instantiation. */
     private CliOutputFormatter() {}
 
     /**
@@ -297,6 +298,7 @@ public final class CliOutputFormatter {
         output.println("Error: " + message);
     }
 
+    /** Validates the destination used by output-formatting methods. */
     private static void requireOutput(PrintStream output) {
         Objects.requireNonNull(output, "Output stream must not be null");
     }

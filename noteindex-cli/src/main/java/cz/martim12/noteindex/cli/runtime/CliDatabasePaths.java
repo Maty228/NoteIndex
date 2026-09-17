@@ -6,6 +6,7 @@ import java.nio.file.Path;
  * Resolves standard filesystem locations used by the CLI.
  */
 public final class CliDatabasePaths {
+    /** Prevents instantiation. */
     private CliDatabasePaths() {}
 
     /**

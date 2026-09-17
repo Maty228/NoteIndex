@@ -69,6 +69,7 @@ final class MarkdownContentProcessor {
     private static final Pattern STRIKETHROUGH =
             Pattern.compile("~~(.+?)~~");
 
+    /** Prevents instantiation. */
     private MarkdownContentProcessor() {}
 
     /**
@@ -121,6 +122,7 @@ final class MarkdownContentProcessor {
         return new ProcessedMarkdown(title, normalizeBlankLines(searchableContent.toString()));
     }
 
+    /** Finds the first visible level-one heading outside fenced code blocks. */
     private static Optional<String> findTitle(List<String> lines) {
         FenceTracker fenceTracker = new FenceTracker();
 
@@ -156,10 +158,12 @@ final class MarkdownContentProcessor {
         return Optional.empty();
     }
 
+    /** Identifies structural Markdown lines that contain no searchable prose. */
     private static boolean isDiscardedBlockLine(String line) {
         return SETEXT_UNDERLINE.matcher(line).matches() || REFERENCE_DEFINITION.matcher(line).matches() || TABLE_SEPARATOR.matcher(line).matches() || THEMATIC_BREAK.matcher(line).matches();
     }
 
+    /** Removes block-level Markdown markers while preserving their visible text. */
     private static String cleanStructure(String line) {
         String cleaned = line;
 
@@ -176,6 +180,7 @@ final class MarkdownContentProcessor {
         return cleaned;
     }
 
+    /** Removes inline Markdown markup and destinations while preserving labels. */
     private static String cleanInlineMarkup(String text) {
         String cleaned = text;
 
@@ -234,6 +239,7 @@ final class MarkdownContentProcessor {
         return cleaned.replaceAll("[\\t ]+", " ").strip();
     }
 
+    /** Replaces Obsidian image embeds with their explicit captions, if present. */
     private static String replaceObsidianImages(String text) {
         Matcher matcher = OBSIDIAN_IMAGE.matcher(text);
 
@@ -255,6 +261,7 @@ final class MarkdownContentProcessor {
         return result.toString();
     }
 
+    /** Replaces Obsidian links with their label or target page name. */
     private static String replaceObsidianLinks(String text) {
         Matcher matcher = OBSIDIAN_LINK.matcher(text);
 
@@ -273,6 +280,7 @@ final class MarkdownContentProcessor {
         return result.toString();
     }
 
+    /** Decodes the common HTML entities accepted by the lightweight processor. */
     private static String decodeCommonHtmlEntities(String text) {
         return text
                 .replace("&nbsp;", " ")
@@ -283,26 +291,41 @@ final class MarkdownContentProcessor {
                 .replace("&#39;", "'");
     }
 
+    /** Appends a stripped content line followed by a newline. */
     private static void appendLine(StringBuilder output, String line) {
         output.append(line.strip()).append("\n");
     }
 
+    /** Removes trailing horizontal whitespace and collapses excessive blank lines. */
     private static String normalizeBlankLines(String text) {
         return text.replaceAll("(?m)[\\t ]+$", "").replaceAll("\\n{3,}", "\n\n").strip();
     }
 
+    /**
+     * Processed Markdown data used to create an imported document.
+     *
+     * @param title optional title extracted from a level-one heading
+     * @param searchableContent visible text normalized for searching
+     */
     record ProcessedMarkdown(Optional<String> title, String searchableContent) {
+        /** Validates processed Markdown data. */
         ProcessedMarkdown {
             Objects.requireNonNull(title, "Processed title must not be null");
             searchableContent = Objects.requireNonNull(searchableContent, "Searchable content must not be null");
         }
     }
 
+    /** Tracks whether Markdown processing is currently inside a fenced code block. */
     private static final class FenceTracker {
         private boolean insideFence;
         private char markerCharacter;
         private int markerLength;
 
+        /**
+         * Consumes a matching fence line and updates the current fence state.
+         *
+         * @return whether the line is a fence delimiter
+         */
         boolean consumeFence(String line) {
             Matcher matcher = FENCE.matcher(line);
 
@@ -332,6 +355,7 @@ final class MarkdownContentProcessor {
             return false;
         }
 
+        /** Returns whether subsequent lines are inside a fenced code block. */
         boolean isInsideFence() {
             return insideFence;
         }

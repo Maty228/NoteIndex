@@ -357,6 +357,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /** Reads the generated document identifier, failing when none was returned. */
     private static long readGeneratedId(PreparedStatement statement) throws SQLException {
         try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
             if (!generatedKeys.next()) {
@@ -368,6 +369,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /** Maps the current result-set row to a complete document. */
     private static Document mapDocument(ResultSet resultSet) throws SQLException {
         return new Document(
                 resultSet.getLong("id"),
@@ -380,6 +382,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
         );
     }
 
+    /** Maps the current result-set row to a lightweight document summary. */
     private static DocumentSummary mapSummary(ResultSet resultSet) throws SQLException {
         return new DocumentSummary(
                 resultSet.getLong("id"),
@@ -389,6 +392,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
         );
     }
 
+    /** Validates data required before an imported document can be persisted. */
     private static void validateDocument(ImportedDocument document) {
         Objects.requireNonNull(document, "Imported document must not be null");
 
@@ -401,6 +405,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
         Objects.requireNonNull(document.searchableContent(), "Searchable content must not be null");
     }
 
+    /** Validates that a document identifier is positive. */
     private static void requirePositiveId(long id) {
         if (id <= 0) {
             throw new IllegalArgumentException(
@@ -409,6 +414,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /** Validates that a required document field contains text. */
     private static void requireNonBlank(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(
@@ -417,6 +423,7 @@ public class JdbcDocumentRepository implements DocumentRepository {
         }
     }
 
+    /** Detects the SQLite constraint failure used for duplicate source URIs. */
     private static boolean isDuplicateSourceException(SQLException exception) {
         for (SQLException current = exception; current != null; current = current.getNextException()) {
             String message = current.getMessage();
@@ -428,6 +435,10 @@ public class JdbcDocumentRepository implements DocumentRepository {
         return false;
     }
 
+    /**
+     * Rolls back a repository transaction and suppresses any rollback failure
+     * onto the original database exception.
+     */
     private static void rollback(Connection connection, SQLException exception) {
         try {
             connection.rollback();

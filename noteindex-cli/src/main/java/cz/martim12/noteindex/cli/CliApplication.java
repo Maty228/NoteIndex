@@ -106,6 +106,7 @@ public final class CliApplication {
         return execute(parsedArgs, standardOutput, errorOutput);
     }
 
+    /** Dispatches a parsed command to help, version or service-backed execution. */
     private int execute(CliArguments args, PrintStream standardOutput, PrintStream errorOutput) {
         return switch (args.command()) {
             case HelpCommand helpCommand -> {
@@ -132,6 +133,7 @@ public final class CliApplication {
         };
     }
 
+    /** Opens the configured application service and converts failures to CLI output. */
     private int executeServiceCommand(Path databaseFile, CliCommand command, PrintStream standardOutput, PrintStream errorOutput) {
         try {
             createDatabaseParentDirectory(databaseFile);
@@ -144,6 +146,7 @@ public final class CliApplication {
         }
     }
 
+    /** Executes one service-backed command and prints its user-facing result. */
     private int executeWithService(NoteIndexService service, CliCommand command, PrintStream standardOutput, PrintStream errorOutput) {
         return switch (command) {
             case FormatsCommand _ -> {
@@ -198,6 +201,7 @@ public final class CliApplication {
         };
     }
 
+    /** Prints general help or help for the requested command topic. */
     private void printHelp(PrintStream output, HelpCommand command) {
         command.topic().ifPresentOrElse(
                 topic -> CliOutputFormatter.printCommandHelp(output, topic),
@@ -206,6 +210,7 @@ public final class CliApplication {
     }
 
 
+    /** Creates the database parent directory when the configured path has one. */
     private static void createDatabaseParentDirectory(Path databaseFile) throws IOException {
         Path parent = databaseFile.getParent();
 
@@ -215,6 +220,7 @@ public final class CliApplication {
     }
 
 
+    /** Validates required CLI configuration text without altering it. */
     private static String requireNonBlank(String value, String name) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(name + " must not be blank");

@@ -37,6 +37,7 @@ public record FieldName(String value) {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return value;

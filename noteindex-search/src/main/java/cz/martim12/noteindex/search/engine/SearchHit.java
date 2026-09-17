@@ -44,6 +44,7 @@ public record SearchHit (
         return lexicalScore + phraseBoost;
     }
 
+    /** Validates that a score component is finite and non-negative. */
     private static void requireNonNegativeFinite(double value, String name) {
         if (!Double.isFinite(value) || value < 0.0) {
             throw new IllegalArgumentException(

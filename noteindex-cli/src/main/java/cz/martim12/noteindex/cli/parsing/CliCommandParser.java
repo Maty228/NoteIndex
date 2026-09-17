@@ -116,6 +116,7 @@ public final class CliCommandParser {
         return result(databaseFile, command);
     }
 
+    /** Parses command-specific arguments into a validated command model. */
     private CliCommand parseCommand(String commandName, List<String> args) {
         if (args.size() == 1 && isHelpOption(args.getFirst()) && !commandName.equals("help")) {
             requireKnownCommand(commandName);
@@ -145,6 +146,7 @@ public final class CliCommandParser {
         };
     }
 
+    /** Parses the single source path required by the import command. */
     private static ImportCommand parseImport(List<String> args) {
         if (args.size() != 1) {
             throw new CliUsageException("Usage: noteindex import <file>");
@@ -155,6 +157,7 @@ public final class CliCommandParser {
         );
     }
 
+    /** Parses a search query and its optional positive result limit. */
     private static SearchCommand parseSearch(List<String> args) {
         int limit = DEFAULT_SEARCH_LIMIT;
         boolean limitSpecified = false;
@@ -196,6 +199,7 @@ public final class CliCommandParser {
         return new SearchCommand(query, limit);
     }
 
+    /** Parses the single positive document identifier required by a command. */
     private static long parseDocumentId(String commandName, List<String> args) {
         if (args.size() != 1) {
             throw new CliUsageException("Usage: noteindex " + commandName + " <document id>");
@@ -215,6 +219,7 @@ public final class CliCommandParser {
         }
     }
 
+    /** Parses general help or a validated command-specific help topic. */
     private static HelpCommand parseHelp(List<String> args) {
         if (args.isEmpty()) {
             return HelpCommand.general();
@@ -230,18 +235,21 @@ public final class CliCommandParser {
         return HelpCommand.forCommand(topic);
     }
 
+    /** Validates that a help topic names a supported command. */
     private static void requireKnownCommand(String commandName) {
         if (!COMMAND_NAMES.contains(commandName)) {
             throw new CliUsageException("Unknown help topic: " + commandName);
         }
     }
 
+    /** Rejects arguments supplied to a command that accepts none. */
     private static void requireNoArguments(String commandName, List<String> args) {
         if (!args.isEmpty()) {
             throw new CliUsageException("Command '" + commandName + "' does not accept arguments");
         }
     }
 
+    /** Parses a positive integer or reports a CLI usage error. */
     private static int parsePositiveInteger(String value, String name) {
         try {
             int parsed = Integer.parseInt(value);
@@ -255,6 +263,7 @@ public final class CliCommandParser {
         }
     }
 
+    /** Parses a filesystem path or translates malformed input to a usage error. */
     private static Path parsePath(String value, String description) {
         try {
             return Path.of(value);
@@ -268,10 +277,12 @@ public final class CliCommandParser {
         }
     }
 
+    /** Recognizes the supported short and long help options. */
     private static boolean isHelpOption(String value) {
         return value.equals("--help") || value.equals("-h");
     }
 
+    /** Copies the unconsumed argument suffix into an immutable list. */
     private static List<String> copyRemaining(String[] args, int startingPosition) {
         List<String> remaining = new ArrayList<>(args.length - startingPosition);
 
@@ -280,6 +291,7 @@ public final class CliCommandParser {
         return List.copyOf(remaining);
     }
 
+    /** Rejects null elements in the command-line argument array. */
     private static void validateArgumentElements(String[] args) {
         for (int pos = 0; pos < args.length; pos++) {
             if (args[pos] == null) {
@@ -288,12 +300,14 @@ public final class CliCommandParser {
         }
     }
 
+    /** Rejects trailing arguments after a terminal global option. */
     private static void requireNoRemainingArguments(String[] args, int startingPosition, String option) {
         if (startingPosition < args.length) {
             throw new CliUsageException(option + " does not accept arguments");
         }
     }
 
+    /** Combines the resolved database path and parsed command. */
     private static CliArguments result(Path databaseFile, CliCommand command) {
         return new CliArguments(databaseFile, command);
     }

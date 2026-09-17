@@ -65,6 +65,7 @@ public class TxtDocumentImporter implements DocumentImporter {
         }
     }
 
+    /** Derives a display title from the source filename without its extension. */
     private static String titleFrom(Path source) {
         String fileName = source.getFileName().toString();
         int extensionStart = fileName.lastIndexOf('.');

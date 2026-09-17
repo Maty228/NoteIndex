@@ -57,6 +57,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         this.searchRuntime = Objects.requireNonNull(searchRuntime, "Search runtime must not be null");
     }
 
+    /** {@inheritDoc} */
     @Override
     public Document importFile(Path source) {
         return withWriteLock(
@@ -64,6 +65,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<SearchResult> search(SearchQuery query, int limit) {
         return withReadLock(
@@ -71,6 +73,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<DocumentSummary> listDocuments() {
         return withReadLock(
@@ -78,6 +81,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public Optional<Document> findDocument(long documentId) {
         return withReadLock(
@@ -85,6 +89,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean deleteDocument(long documentId) {
         return withWriteLock(
@@ -92,6 +97,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public Set<String> supportedImportExtensions() {
         return withReadLock(
@@ -99,6 +105,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean renameDocument(long documentId, String newTitle) {
         return withWriteLock(
@@ -106,6 +113,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public void close() {
         writeLock.lock();
@@ -119,6 +127,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         }
     }
 
+    /** Executes a complete read-only service operation while holding the read lock. */
     private <T> T withReadLock(Supplier<T> operation) {
         readLock.lock();
 
@@ -130,6 +139,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         }
     }
 
+    /** Executes a complete mutating service operation while holding the write lock. */
     private <T> T withWriteLock(Supplier<T> operation) {
         writeLock.lock();
 
@@ -141,6 +151,7 @@ public final class DefaultNoteIndexService implements NoteIndexService {
         }
     }
 
+    /** Rejects operations after the service has been closed. */
     private void ensureOpen() {
         if (closed.get()) {
             throw new IllegalStateException("NoteIndex service is closed");

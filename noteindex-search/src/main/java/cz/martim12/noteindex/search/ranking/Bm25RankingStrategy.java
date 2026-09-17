@@ -180,6 +180,7 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         return score;
     }
 
+    /** Scores an exact or best prefix match for one standalone term and field. */
     private double scoreStandaloneTermInField(
             long documentId,
             DocumentStatistics documentStatistics,
@@ -243,6 +244,7 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         return bestPrefixScore * PREFIX_MATCH_WEIGHT;
     }
 
+    /** Collects distinct terms contributed by required phrases. */
     private static List<String> phraseTerms(
             ParsedQuery query
     ) {
@@ -258,6 +260,7 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         return List.copyOf(terms);
     }
 
+    /** Calculates the weighted BM25 contribution of one indexed term and field. */
     private double scoreTermInField(long documentId, DocumentStatistics documentStatistics, String term, FieldName field, double fieldWeight) {
         List<Posting> postings = indexReader.postings(term, field);
 
@@ -288,10 +291,12 @@ public final class Bm25RankingStrategy implements RankingStrategy {
 
     }
 
+    /** Calculates the BM25 inverse-document-frequency component. */
     private double inverseDocumentFrequency(long documentCount, long documentFrequency) {
         return Math.log(1.0 + (documentCount - documentFrequency + 0.5) / (documentFrequency + 0.5));
     }
 
+    /** Calculates the length-normalized BM25 term-frequency component. */
     private double normalizedTermFrequency(int termFrequency, int fieldLength, double averageFieldLength) {
         double lengthNormalization = 1.0 - parameters.b() + parameters.b() * fieldLength / averageFieldLength;
 
@@ -303,6 +308,10 @@ public final class Bm25RankingStrategy implements RankingStrategy {
     /**
      * Posting lists are ordered by document ID, so binary search
      * avoids scanning the complete posting list for each score.
+     *
+     * @param postings postings ordered by document ID
+     * @param documentId document identifier to locate
+     * @return matching posting, or null when the document is absent
      */
     private static Posting findPosting(List<Posting> postings, long documentId) {
         int lower = 0;
@@ -326,6 +335,7 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         return null;
     }
 
+    /** Validates and defensively copies positive field weights. */
     private static Map<FieldName, Double> copyFieldWeights(Map<FieldName, Double> fieldWeights) {
         Objects.requireNonNull(fieldWeights, "Field weights must not be null");
 

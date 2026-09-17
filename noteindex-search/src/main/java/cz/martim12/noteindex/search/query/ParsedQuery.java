@@ -66,6 +66,7 @@ public record ParsedQuery (
         return !requiredPhrases.isEmpty();
     }
 
+    /** Validates that every standalone query term is non-null and non-blank. */
     private static void validateTerms(List<String> terms) {
         for (String term : terms) {
             Objects.requireNonNull(term, "Query term must not be null");

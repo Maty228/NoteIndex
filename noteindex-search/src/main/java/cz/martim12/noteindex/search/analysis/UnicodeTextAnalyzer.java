@@ -48,6 +48,7 @@ public final class UnicodeTextAnalyzer implements TextAnalyzer {
         return List.copyOf(tokens);
     }
 
+    /** Normalizes a token to NFC and locale-independent lowercase. */
     private static String normalize(String token) {
         return Normalizer.normalize(token, Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
     }

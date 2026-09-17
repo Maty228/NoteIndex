@@ -108,6 +108,10 @@ public final class SearchIndexSynchronizer {
         }
     }
 
+    /**
+     * Clears a partially rebuilt index and suppresses any clearing failure onto
+     * the original rebuild failure.
+     */
     private void clearAfterFailure(RuntimeException failure) {
         try {
             searchIndex.clear();

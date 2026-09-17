@@ -83,6 +83,7 @@ public final class DefaultQueryParser implements QueryParser {
         );
     }
 
+    /** Analyzes unquoted text and adds its distinct normalized terms. */
     private void addStandaloneTerms(String text, Set<String> destination) {
         analyzer.analyze(text)
                 .stream()
@@ -90,6 +91,7 @@ public final class DefaultQueryParser implements QueryParser {
                 .forEach(destination::add);
     }
 
+    /** Analyzes quoted text and adds a non-empty required phrase. */
     private void addPhrase(String text, Set<QueryPhrase> destination) {
 
         List<String> terms = analyzer.analyze(text)

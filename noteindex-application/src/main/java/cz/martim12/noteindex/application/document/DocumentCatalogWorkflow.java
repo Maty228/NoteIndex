@@ -125,12 +125,14 @@ public final class DocumentCatalogWorkflow {
         }
     }
 
+    /** Validates that a document identifier is positive. */
     private static void requirePositiveDocumentId(long documentId) {
         if (documentId <= 0) {
             throw new IllegalArgumentException("Document ID must be positive");
         }
     }
 
+    /** Validates that a document title contains text. */
     private static void requireNonBlankTitle(String title) {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException(

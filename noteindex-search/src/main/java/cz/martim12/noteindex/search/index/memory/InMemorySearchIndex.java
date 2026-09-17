@@ -287,6 +287,7 @@ public final class InMemorySearchIndex implements SearchIndex {
         }
     }
 
+    /** Analyzes a document into immutable statistics and positional data. */
     private PreparedDocument prepare(IndexDocument document) {
         Map<FieldName, Integer> fieldLengths = new LinkedHashMap<>();
 
@@ -313,6 +314,7 @@ public final class InMemorySearchIndex implements SearchIndex {
         );
     }
 
+    /** Groups analyzed token positions by normalized term. */
     private static Map<String, List<Integer>> collectPositions(List<AnalyzedToken> tokens) {
         Map<String, List<Integer>> positionsByTerm = new LinkedHashMap<>();
 
@@ -325,6 +327,7 @@ public final class InMemorySearchIndex implements SearchIndex {
         return positionsByTerm;
     }
 
+    /** Creates an immutable deep copy of positional term data. */
     private static Map<String, List<Integer>> immutablePositions(Map<String, List<Integer>> positionsByTerm) {
         Map<String, List<Integer>> copy = new LinkedHashMap<>();
 
@@ -336,6 +339,7 @@ public final class InMemorySearchIndex implements SearchIndex {
         return Collections.unmodifiableMap(copy);
     }
 
+    /** Adds prepared postings and statistics to the current index state. */
     private void addPreparedDocument(PreparedDocument preparedDocument) {
         long documentId = preparedDocument.statistics().documentId();
 
@@ -378,6 +382,7 @@ public final class InMemorySearchIndex implements SearchIndex {
         termsByDocument.put(documentId, Collections.unmodifiableMap(documentTerms));
     }
 
+    /** Removes one document's postings and any resulting empty term maps. */
     private void removeDocumentPostings(long documentId, FieldName field, Set<String> terms) {
         NavigableMap<String, NavigableMap<Long, Posting>> fieldPostings = postingsByField.get(field);
         if (fieldPostings == null) {
@@ -403,6 +408,7 @@ public final class InMemorySearchIndex implements SearchIndex {
         }
     }
 
+    /** Validates that a normalized search term contains text. */
     private static void requireTerm(String normalizedTerm) {
         if (normalizedTerm == null || normalizedTerm.isBlank()) {
             throw new IllegalArgumentException(
@@ -411,6 +417,7 @@ public final class InMemorySearchIndex implements SearchIndex {
         }
     }
 
+    /** Validates that a document identifier is positive. */
     private static void requirePositiveDocumentId(long documentId) {
         if (documentId <= 0) {
             throw new IllegalArgumentException(
@@ -419,29 +426,35 @@ public final class InMemorySearchIndex implements SearchIndex {
         }
     }
 
+    /** Holds analyzed document data before it is committed to the index. */
     private record PreparedDocument(
             DocumentStatistics statistics,
             Map<FieldName, Map<String, List<Integer>>> positionsByField
     ) {}
 
+    /** Accumulates document and token counts for one indexed field. */
     private static final class MutableFieldStatistics {
         private long documentsWithField;
         private long totalTokenCount;
 
+        /** Adds one document's length to the accumulated field statistics. */
         private void addDocument(int fieldLength) {
             documentsWithField++;
             totalTokenCount += fieldLength;
         }
 
+        /** Removes one document's length from the accumulated field statistics. */
         private void removeDocument(int fieldLength) {
             documentsWithField--;
             totalTokenCount -= fieldLength;
         }
 
+        /** Returns whether the field is absent from all indexed documents. */
         private boolean isEmpty() {
             return documentsWithField == 0;
         }
 
+        /** Creates an immutable snapshot of the accumulated statistics. */
         private FieldStatistics snapshot() {
             return new FieldStatistics(documentsWithField, totalTokenCount);
         }

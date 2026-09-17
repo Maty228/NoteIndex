@@ -10,6 +10,7 @@ import java.util.Objects;
  */
 public final class SearchIndexes {
 
+    /** Prevents instantiation. */
     private SearchIndexes() {
         throw new AssertionError("Utility class must not be instantiated");
     }

@@ -60,6 +60,7 @@ public final class PositionalPhraseMatcher implements PhraseMatcher {
         return List.copyOf(matches);
     }
 
+    /** Finds phrase occurrences in one field by aligning positional postings. */
     private List<PhraseMatch> findMatchesInField(QueryPhrase phrase, FieldName field) {
         List<Map<Long, Posting>> postingsByTerm = new ArrayList<>();
 
@@ -117,6 +118,7 @@ public final class PositionalPhraseMatcher implements PhraseMatcher {
         return matches;
     }
 
+    /** Indexes a term's postings by document and rejects duplicate entries. */
     private static Map<Long, Posting> mapByDocument(List<Posting> postings) {
         Map<Long, Posting> byDocument = new HashMap<>();
 
@@ -137,6 +139,11 @@ public final class PositionalPhraseMatcher implements PhraseMatcher {
     /**
      * Retains starts for which the next phrase term occurs at
      * start + termOffset.
+     *
+     * @param currentStarts candidate positions of the phrase's first term
+     * @param nextPositions positions of the term being aligned
+     * @param termOffset required offset from each candidate start
+     * @return candidate starts that remain positionally aligned
      */
     private static List<Integer> retailAlignedStarts(List<Integer> currentStarts, List<Integer> nextPositions, int termOffset) {
         List<Integer> retained = new ArrayList<>();
@@ -163,6 +170,7 @@ public final class PositionalPhraseMatcher implements PhraseMatcher {
         return retained;
     }
 
+    /** Validates, deduplicates and defensively copies searchable fields. */
     private static List<FieldName> copyFields(Collection<FieldName> fields) {
         Objects.requireNonNull(fields, "Search fields must not be null");
 
