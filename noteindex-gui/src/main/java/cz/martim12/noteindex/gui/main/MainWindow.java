@@ -1370,31 +1370,6 @@ public final class MainWindow {
                 );
     }
 
-    private void refreshSelectedSearchHighlights() {
-        if (!searchMode || viewModel == null) {
-            return;
-        }
-
-        SearchResult result =
-                searchResultList.getSelectionModel()
-                        .getSelectedItem();
-
-        var document =
-                viewModel.selectedDocumentProperty().get();
-
-        if (result == null
-                || document == null
-                || result.document().id() != document.id()) {
-
-            return;
-        }
-
-        documentViewer.showDocument(
-                document,
-                result.contentHighlights()
-        );
-    }
-
     private void selectNearestLibraryDocument(int previousIndex) {
         if (documentList.getItems().isEmpty()) {
             viewModel.selectDocument(null);

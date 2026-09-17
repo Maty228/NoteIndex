@@ -25,13 +25,26 @@ public final class Bm25RankingStrategy implements RankingStrategy {
 
     private static final double PREFIX_MATCH_WEIGHT = 0.85;
 
-
+    /**
+     * Creates a BM25 ranking strategy using {@link Bm25Parameters#DEFAULT}
+     * and {@link StandaloneTermMatchMode#EXACT}.
+     *
+     * @param indexReader source of index statistics and postings
+     * @param fieldWeights weights assigned to searchable fields
+     */
     public Bm25RankingStrategy(IndexReader indexReader, Map<FieldName, Double> fieldWeights) {
         this(
                 indexReader, fieldWeights, Bm25Parameters.DEFAULT, StandaloneTermMatchMode.EXACT
         );
     }
 
+    /**
+     * Creates a BM25 ranking strategy using {@link Bm25Parameters#DEFAULT}.
+     *
+     * @param indexReader source of index statistics and postings
+     * @param fieldWeights weights assigned to searchable fields
+     * @param standaloneTermMatchMode matching mode for standalone terms
+     */
     public Bm25RankingStrategy(
             IndexReader indexReader,
             Map<FieldName, Double> fieldWeights,
@@ -73,6 +86,13 @@ public final class Bm25RankingStrategy implements RankingStrategy {
         );
     }
 
+    /**
+     * Creates a BM25 ranking strategy using {@link StandaloneTermMatchMode#EXACT}.
+     *
+     * @param indexReader source of index statistics and postings
+     * @param fieldWeights weights assigned to searchable fields
+     * @param parameters BM25 tuning parameters
+     */
     public Bm25RankingStrategy(
             IndexReader indexReader,
             Map<FieldName, Double> fieldWeights,

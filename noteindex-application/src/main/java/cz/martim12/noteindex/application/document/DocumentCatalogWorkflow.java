@@ -10,9 +10,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Coordinates document browsing and deletion.
- * The repository remains authoritative. After a delete attempt,
- * the corresponding derived search-index entry is removed as well.
+ * Coordinates document browsing, deletion, and renaming.
+ * The repository remains authoritative. If post-persistence synchronization
+ * of the derived search index fails, a complete rebuild is attempted before
+ * the original failure is propagated. A recovery failure is attached to the
+ * original failure as suppressed.
  */
 public final class DocumentCatalogWorkflow {
 
@@ -57,6 +59,9 @@ public final class DocumentCatalogWorkflow {
      * The index cleanup also happens when the repository reports
      * that the document is already missing. This repairs a possible
      * stale index entry.
+     * If index synchronization fails, a complete derived-index rebuild is
+     * attempted before the original failure is propagated. A recovery failure
+     * is attached to the original failure as suppressed.
      *
      * @param documentId stored document ID
      * @return true when a persisted document was deleted
@@ -80,6 +85,9 @@ public final class DocumentCatalogWorkflow {
      * Changes the user-visible document title and synchronizes the
      * derived search index.
      * The original source file is not modified.
+     * If index synchronization fails, a complete derived-index rebuild is
+     * attempted before the original failure is propagated. A recovery failure
+     * is attached to the original failure as suppressed.
      *
      * @param documentId stored document ID
      * @param newTitle new user-visible title

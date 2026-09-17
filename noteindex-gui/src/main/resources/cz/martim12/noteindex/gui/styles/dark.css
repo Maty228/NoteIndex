@@ -294,15 +294,6 @@
     -fx-text-fill: #949ca8;
 }
 
-.danger-button {
-    -fx-background-color: #d64545;
-    -fx-text-fill: #ffffff;
-}
-
-.danger-button:hover {
-    -fx-background-color: #e05252;
-}
-
 .settings-view {
     -fx-background-color: #17191d;
 }

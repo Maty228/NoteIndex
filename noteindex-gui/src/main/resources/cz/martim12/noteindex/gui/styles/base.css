@@ -152,11 +152,12 @@
 }
 
 .primary-button {
-    -fx-min-height: 40px;
+    -fx-min-height: 38px;
     -fx-pref-height: 40px;
-    -fx-background-radius: 10px;
-    -fx-border-radius: 10px;
-    -fx-padding: 0 22px;
+    -fx-background-radius: 9px;
+    -fx-border-radius: 9px;
+    -fx-padding: 0 18px;
+    -fx-font-size: 13px;
     -fx-font-weight: 600;
     -fx-cursor: hand;
 }
@@ -329,6 +330,9 @@
 
 .search-result-list .list-cell {
     -fx-padding: 11px 12px;
+    -fx-min-height: 104px;
+    -fx-pref-height: 104px;
+    -fx-max-height: 104px;
 }
 
 .search-result-content {
@@ -350,13 +354,6 @@
 }
 
 
-
-.danger-button {
-    -fx-background-radius: 8px;
-    -fx-border-radius: 8px;
-    -fx-font-weight: 600;
-    -fx-padding: 7px 16px;
-}
 
 .settings-view {
     -fx-background-color: transparent;
@@ -465,8 +462,7 @@
 }
 
 .secondary-button,
-.danger-button,
-.primary-button {
+.danger-button {
     -fx-min-height: 38px;
     -fx-padding: 0 18px;
 
@@ -683,10 +679,6 @@
     -fx-font-size: 14px;
 }
 
-.search-result-snippet {
-    -fx-line-spacing: 2px;
-}
-
 .search-result-snippet .highlighted-text {
     -fx-font-family: "System";
     -fx-font-size: 12px;
@@ -699,12 +691,6 @@
 
 .highlighted-text-match {
     -fx-font-weight: 700;
-}
-
-.search-result-list .list-cell {
-    -fx-min-height: 104px;
-    -fx-pref-height: 104px;
-    -fx-max-height: 104px;
 }
 
 .search-query-warning {

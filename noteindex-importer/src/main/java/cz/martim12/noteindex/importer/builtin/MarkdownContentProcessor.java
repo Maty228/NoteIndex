@@ -1,7 +1,5 @@
 package cz.martim12.noteindex.importer.builtin;
 
-import cz.martim12.noteindex.importer.exception.ImportException;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -74,11 +72,10 @@ final class MarkdownContentProcessor {
     private MarkdownContentProcessor() {}
 
     /**
-     * Reads a Markdown file and creates an imported document.
+     * Processes already-loaded Markdown source text.
      *
-     * @param markdown Markdown file to import
-     * @return imported document data
-     * @throws ImportException if the file cannot be read
+     * @param markdown Markdown source text
+     * @return processed Markdown data
      */
      static ProcessedMarkdown process(String markdown) {
         Objects.requireNonNull(markdown, "Markdown must not be null");
@@ -112,7 +109,7 @@ final class MarkdownContentProcessor {
             cleaned = cleanInlineMarkup(cleaned);
 
             /*
-             * Any pipes still present are table separators. Obsidian links
+             * Any pipes still present are treated as table separators. Obsidian links
              * and image captions have already been processed at this point.
              */
             cleaned = cleaned.replace('|', ' ');

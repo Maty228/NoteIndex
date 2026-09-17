@@ -12,10 +12,11 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Coordinates importing, persistence and search indexing.
- * SQLite remains the authoritative data store. The persisted
- * document is indexed only after the repository successfully
- * saves it.
+ * Coordinates importing, persistence, and search indexing.
+ * SQLite remains the authoritative data store. If index synchronization fails
+ * after persistence succeeds, a complete derived-index rebuild is attempted
+ * before the original failure is propagated. A recovery failure is attached
+ * to the original failure as suppressed.
  */
 public final class DocumentImportWorkflow {
 
@@ -42,6 +43,10 @@ public final class DocumentImportWorkflow {
 
     /**
      * Imports a source file, stores it and adds it to the search index.
+     * If index synchronization fails after persistence succeeds, a complete
+     * derived-index rebuild is attempted before the original failure is
+     * propagated. A recovery failure is attached to the original failure as
+     * suppressed.
      *
      * @param source source file to import
      * @return persisted document

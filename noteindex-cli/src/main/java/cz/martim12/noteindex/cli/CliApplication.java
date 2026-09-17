@@ -67,9 +67,13 @@ public final class CliApplication {
         this(serviceFactory, version, commandParser, new CliErrorHandler());
     }
 
-    /*
-     * Package-private constructor for deterministic tests with a
-     * temporary default database path.
+    /**
+     * Creates a CLI application with custom dependencies and error handling.
+     *
+     * @param serviceFactory factory used to open application services
+     * @param version displayed application version
+     * @param commandParser parser used for CLI arguments
+     * @param errorHandler handler for usage and operation failures
      */
     public CliApplication(NoteIndexServiceFactory serviceFactory, String version, CliCommandParser commandParser, CliErrorHandler errorHandler) {
         this.serviceFactory = Objects.requireNonNull(serviceFactory, "Service factory must not be null");

@@ -22,7 +22,6 @@ public final class SearchResultCell extends ListCell<SearchResult>{
 
     private static final int MAX_SNIPPET_CHARACTERS = 105;
     private static final int CONTEXT_BEFORE_MATCH = 45;
-    private static final int WORD_BOUNDARY_LOOKBACK = 35;
     private static final double SNIPPET_HEIGHT = 48;
 
     private static final DateTimeFormatter DATE_FORMATTER =
@@ -233,38 +232,6 @@ public final class SearchResultCell extends ListCell<SearchResult>{
             String text,
             List<HighlightRange> highlights
     ) {}
-
-    private static int findSnippetEnd(String text) {
-        int end = Math.min(
-                MAX_SNIPPET_CHARACTERS,
-                text.length()
-        );
-
-        int minimumEnd = Math.max(
-                0,
-                end - WORD_BOUNDARY_LOOKBACK
-        );
-
-        while (end > minimumEnd
-                && !Character.isWhitespace(
-                text.charAt(end - 1)
-        )) {
-
-            end--;
-        }
-
-        if (end == minimumEnd) {
-            return Math.min(
-                    MAX_SNIPPET_CHARACTERS,
-                    text.length()
-            );
-        }
-
-        return end;
-    }
-
-
-
 
     private static String formatLabel(String format) {
         return switch (format) {

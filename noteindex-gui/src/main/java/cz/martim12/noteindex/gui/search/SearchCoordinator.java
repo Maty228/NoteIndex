@@ -9,7 +9,6 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -45,7 +44,6 @@ public final class SearchCoordinator implements AutoCloseable {
 
     private final ObservableList<SearchResult> results = FXCollections.observableArrayList();
 
-    private final ReadOnlyStringWrapper query = new ReadOnlyStringWrapper("");
     private final ReadOnlyBooleanWrapper searching = new ReadOnlyBooleanWrapper();
     private final ReadOnlyObjectWrapper<Throwable> error = new ReadOnlyObjectWrapper<>();
 
@@ -147,7 +145,6 @@ public final class SearchCoordinator implements AutoCloseable {
                     return;
                 }
 
-                query.set("");
                 results.clear();
                 error.set(null);
                 searching.set(false);
@@ -190,7 +187,6 @@ public final class SearchCoordinator implements AutoCloseable {
                 return;
             }
 
-            query.set(queryText);
             error.set(null);
             searching.set(true);
             unfinishedQuotedPhrase.set(false);
@@ -209,7 +205,7 @@ public final class SearchCoordinator implements AutoCloseable {
     }
 
     /**
-     * Clears the current search query and results.
+     * Cancels any pending search and clears the current results.
      */
     public void clear() {
         search("");
