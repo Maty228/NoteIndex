@@ -50,6 +50,9 @@
                     <mainClass>
                         noteindex.gui/cz.martim12.noteindex.gui.NoteIndexGui
                     </mainClass>
+                    <options>
+                        <option>--enable-native-access=javafx.graphics,org.xerial.sqlitejdbc</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>
