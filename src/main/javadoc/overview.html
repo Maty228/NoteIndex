@@ -18,6 +18,12 @@
     It provides both a graphical user interface and a command-line interface.
 </p>
 
+<h2>Requirements and Technology</h2>
+
+<p>
+    NoteIndex targets Java 25 and is built with Maven. Its desktop interface uses JavaFX, and persistent document storage uses SQLite through JDBC.
+</p>
+
 <h2>Architecture</h2>
 
 <p>
@@ -39,15 +45,16 @@
 <ul>
     <li>Importing Markdown and plain text documents.</li>
     <li>Local SQLite document storage.</li>
-    <li>Full-text search with ranking.</li>
-    <li>Phrase searching and highlighted results.</li>
+    <li>Full-text and prefix search with ranking.</li>
+    <li>Exact quoted phrase searching and highlighted results.</li>
     <li>Document management through GUI and CLI.</li>
 </ul>
 
 <h2>Persistence</h2>
 
 <p>
-    NoteIndex stores data locally using SQLite. The search index is maintained as derived data and synchronized with the stored documents.
+    SQLite is the authoritative persistent storage for NoteIndex. The in-memory search index is derived state, is synchronized with stored documents,
+    and can be rebuilt from the database.
 </p>
 
 <h2>User Interfaces</h2>
