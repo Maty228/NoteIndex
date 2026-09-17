@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-NoteIndex is a modular Java application for collecting and searching study notes. It provides a single local library for plain-text and Markdown files, allowing users to browse imported material and find relevant content without uploading notes to an external service.
+NoteIndex is a modular Java application for collecting and searching study notes. It provides a single local library for plain-text and Markdown files, allowing users to browse imported material and find relevant content without uploading notes to an external service. After Maven has obtained the dependencies, normal application use is local and does not require a cloud service.
 
 The project provides two user interfaces:
 
@@ -28,7 +28,7 @@ considered derived data and is rebuilt from stored documents when required.
 
 ## Requirements
 
-- **JDK 25**. The Maven build is configured with Java source and target version 25. A JRE alone is not sufficient.
+- **JDK 25**. The Maven build is configured with `maven.compiler.release=25`; a JRE alone is not sufficient.
 - **Apache Maven** capable of running with JDK 25.
 - Internet access during the first build so Maven can download JavaFX, SQLite JDBC, JUnit, and build plugins.
 - A graphical desktop environment when running the JavaFX interface.
@@ -98,6 +98,8 @@ mvn -f noteindex-gui/pom.xml javafx:run
 
 The application opens a startup view while it initializes the local SQLite database and rebuilds the search index. When initialization finishes, the main library window becomes available.
 
+![NoteIndex library with document filters, list, and preview](images/main-library-overview.png)
+
 ### Command-Line Interface
 
 First run `mvn install` from the repository root. The CLI module does not define a packaged shell command, so it can be launched through Maven's Exec Plugin:
@@ -116,19 +118,19 @@ Replace `help` in `-Dexec.args` with the desired CLI arguments. For example, use
 
 At startup, NoteIndex opens the local database and rebuilds its in-memory search index from stored documents. The status area changes to **Library ready** when the application can be used. A startup dialog displays the database path and error details if initialization fails.
 
-[SCREENSHOT: Main application window]
-
 ### Importing Documents
 
 Use the **+** button in the toolbar or the import action in the empty-library view to open the native multi-file chooser. Supported files can also be dragged and dropped anywhere in the main window. Imports run in the background, and a progress view reports successful and failed files.
 
-[SCREENSHOT: Import workflow]
+![Completed NoteIndex document import](images/import-workflow.png)
 
 ### Browsing and Selecting Documents
 
 The sidebar provides views for all notes, recent notes, plain-text notes, and Markdown notes. The document list can be sorted by newest, oldest, title ascending, or title descending. Selecting a document loads it into the viewer.
 
 The document actions menu and context menus support renaming a note and removing it from NoteIndex. Renaming changes only the displayed title. Deleting a note removes the stored NoteIndex entry but does not delete the original source file.
+
+![NoteIndex rename dialog](images/rename-modal.png)
 
 ### Viewing Content
 
@@ -140,7 +142,7 @@ Type in the toolbar search field to switch from the library list to ranked searc
 
 Press `Ctrl+K` on Windows/Linux or `Command+K` on macOS to focus the search field. Press `Esc` to clear it. If a quoted phrase is unfinished, NoteIndex waits for the closing quotation mark and displays an inline warning instead of running an invalid search.
 
-[SCREENSHOT: Search results]
+![Ranked search results with contextual snippets and highlights](images/search-and-highlighting.png)
 
 ### Settings and Preferences
 
@@ -153,7 +155,11 @@ Open **Settings** from the sidebar. The settings view allows users to:
 
 Theme and result-limit preferences are persisted using the Java preferences system.
 
-[SCREENSHOT: Settings]
+![NoteIndex appearance, search, and library settings](images/settings.png)
+
+The fixed dark theme uses the same library and document-viewing workflow:
+
+![NoteIndex library using the dark theme](images/dark-mode.png)
 
 ## Supported Document Formats
 
@@ -171,6 +177,20 @@ The GUI can import several files in one operation. Individual failures do not pr
 ## Searching
 
 Search covers document titles and searchable document content. Results are ordered by relevance, with title matches weighted more strongly than body matches. Standalone terms support prefix matching, which allows results to appear while a term is still being typed.
+
+Examples:
+
+```text
+virtual
+"virtual machine"
+neur
+```
+
+- `virtual` performs a normal ranked search.
+- `"virtual machine"` requires those terms next to each other in that exact order.
+- `neur` can match a longer standalone term such as `neural` through prefix matching.
+
+Prefix matching applies to standalone terms. Terms inside a quoted phrase are matched exactly rather than expanded by prefix.
 
 Use double quotation marks for a required exact phrase:
 
@@ -215,6 +235,42 @@ When using the Maven launch command above, place the portion after `noteindex` i
 
 Document IDs and search limits must be positive numbers. CLI usage errors are written to standard error and return a usage-error exit code; operation failures return a general failure exit code.
 
+The following examples use the Maven launcher shown above:
+
+```bash
+# General help
+mvn -f noteindex-cli/pom.xml exec:java \
+  -Dexec.mainClass=cz.martim12.noteindex.cli.NoteIndexCli \
+  -Dexec.args="help"
+
+# Import one file
+mvn -f noteindex-cli/pom.xml exec:java \
+  -Dexec.mainClass=cz.martim12.noteindex.cli.NoteIndexCli \
+  -Dexec.args="import /path/to/note.md"
+
+# List documents
+mvn -f noteindex-cli/pom.xml exec:java \
+  -Dexec.mainClass=cz.martim12.noteindex.cli.NoteIndexCli \
+  -Dexec.args="list"
+
+# Search, limiting output to 25 results
+mvn -f noteindex-cli/pom.xml exec:java \
+  -Dexec.mainClass=cz.martim12.noteindex.cli.NoteIndexCli \
+  -Dexec.args="search --limit 25 virtual"
+
+# Show document 1
+mvn -f noteindex-cli/pom.xml exec:java \
+  -Dexec.mainClass=cz.martim12.noteindex.cli.NoteIndexCli \
+  -Dexec.args="show 1"
+
+# Delete document 1
+mvn -f noteindex-cli/pom.xml exec:java \
+  -Dexec.mainClass=cz.martim12.noteindex.cli.NoteIndexCli \
+  -Dexec.args="delete 1"
+```
+
+The current CLI has no rename command; renaming is available in the GUI.
+
 ## Data Storage
 
 NoteIndex stores imported documents locally in SQLite. Both the GUI and CLI use this default path:
@@ -226,6 +282,33 @@ NoteIndex stores imported documents locally in SQLite. Both the GUI and CLI use 
 The `~` represents the current user's home directory. NoteIndex creates the parent directory and initializes or migrates the database schema automatically, so no database server or manual schema setup is required.
 
 The CLI can use another database with `--database <file>`. The GUI settings page displays the exact database currently in use. The full-text index is not stored as a separate permanent file; it is rebuilt in memory from SQLite at startup.
+
+## Testing
+
+Run the complete test suite from the repository root:
+
+```bash
+mvn clean verify
+```
+
+The current verified result is **248 tests, 0 failures, 0 errors, 0 skipped**. This is a statement of the current test run, not a claim that every possible behavior is covered.
+
+## Programmer Documentation
+
+Generate aggregate Javadoc for all modules from the repository root:
+
+```bash
+mvn javadoc:aggregate
+```
+
+Maven writes the generated documentation to `target/reports/apidocs/`; open `target/reports/apidocs/index.html` in a browser. Generated Javadoc HTML is a build artifact and is intentionally not included in the submission archive. The submitted source contains the Javadoc comments, package documentation, module documentation, and overview source used to generate it.
+
+## Known Limitations
+
+- Import is limited to UTF-8 plain-text and Markdown files; PDF, image, and OCR import are not supported.
+- Storage is a local SQLite database. NoteIndex has no cloud synchronization, shared-library service, or remote database mode.
+- One running NoteIndex process per database file is the intended usage. Separate processes maintain separate in-memory indexes and should not concurrently modify the same database.
+- The project provides Maven development launch commands, not packaged `.app`, `.dmg`, or other native installers.
 
 ## Troubleshooting
 
@@ -254,4 +337,3 @@ Confirm that the file is a readable regular file with a `.txt`, `.md`, or `.mark
 ### A Phrase Search Is Not Executed
 
 Every opening double quotation mark must have a closing quotation mark. The GUI displays an unfinished-phrase warning while typing; the CLI reports invalid query syntax.
-
